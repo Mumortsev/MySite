@@ -18,7 +18,8 @@ const variants = [
   { name: 'Chrome × Dark Veil', label: 'Хром · тёмная дымка', theme: 'dark' },
   { name: 'Chrome × Floating Lines', label: 'Хром · линии', theme: 'dark' },
   { name: 'Chrome × Side Rays', label: 'Хром · боковой свет', theme: 'dark' },
-  { name: 'Chrome × Liquid Chrome', label: 'Хром · жидкий металл', theme: 'dark' }
+  { name: 'Chrome × Liquid Chrome', label: 'Хром · жидкий металл', theme: 'dark' },
+  { name: 'Chrome × Silk', label: 'Светлая · хром на шёлке', theme: 'light' }
 ];
 
 function IntermittentLightning({ mobile, dpr, reduced }) {
@@ -63,6 +64,10 @@ function App() {
   const dpr = mobile ? Math.min(window.devicePixelRatio || 1, 1) : Math.min(window.devicePixelRatio || 1, 1.5);
   const chromeText = <div className="chrome-layer chrome-layer--text"><MetallicPaint text="STUDIO" color="#dce7ef" backgroundColor="#000000" density={mobile ? 0.85 : 1.5} distortion={0.045} dispersion={0.2} scale={mobile ? 0.95 : 0.8} speed={0.48} dpr={mobile ? 0.8 : dpr} paused={reduced} /></div>;
   const chromeScene = background => <div className="chrome-lightning"><div className="chrome-layer chrome-layer--background">{background}</div>{chromeText}<div className="chrome-lightning__vignette" /></div>;
+  const silkChrome = <div className="chrome-lightning chrome-lightning--silk">
+    <div className="chrome-layer chrome-layer--background"><Silk color="#ded4c7" sheenColor="#fffaf1" lightMode speed={1.15} scale={1.12} noiseIntensity={0.35} sheen={0.85} depth={0.5} glow={0.1} wave={0.5} ripple={0.25} dpr={mobile ? 0.75 : dpr} paused={reduced} /></div>
+    <div className="chrome-layer chrome-layer--text chrome-layer--silk-text"><MetallicPaint text="STUDIO" color="#56616c" backgroundColor="transparent" density={mobile ? 0.9 : 1.5} distortion={0.035} dispersion={0.15} softness={0.12} lightMode scale={mobile ? 0.95 : 0.8} speed={0.36} dpr={mobile ? 0.8 : dpr} paused={reduced} /></div>
+  </div>;
   const scene = [
     <Silk color="#c6bbae" sheenColor="#ffffff" lightMode speed={2.1} scale={1.15} noiseIntensity={0.7} sheen={0.7} depth={0.65} glow={0.18} wave={0.65} ripple={0.4} dpr={dpr} paused={reduced} />,
     <Lightning color="#c7d5ef" bolts={2} spread={0.5} branches={0.55} glow={0.85} intensity={1.15} speed={0.85} flicker={0.45} dpr={dpr} paused={reduced} />,
@@ -71,7 +76,8 @@ function App() {
     chromeScene(<DarkVeil color="#64788b" speed={0.22} glow={0.24} sheen={0.2} quality={mobile ? 0.3 : 0.5} dpr={mobile ? 0.6 : 1} paused={reduced} />),
     chromeScene(<FloatingLines linesGradient={['#657a90','#d6e0e9']} lineCount={mobile ? 3 : 5} lineWidth={0.8} animationSpeed={0.4} glow={0.35} amplitude={0.6} interactive={!mobile} dpr={mobile ? 0.65 : 1} />),
     chromeScene(<SideRays rayColor1="#b5c5d5" rayColor2="#758da7" origin="top-right" speed={0.5} intensity={0.7} density={3} glow={0.4} followMouse={!mobile} maxDevicePixelRatio={mobile ? 0.65 : 1} />),
-    chromeScene(<LiquidChrome color="#778594" speed={0.12} amplitude={0.14} detail={mobile ? 2 : 3} roughness={0.65} exposure={0.5} interactive={!mobile} maxDevicePixelRatio={mobile ? 0.55 : 0.9} />)
+    chromeScene(<LiquidChrome color="#778594" speed={0.12} amplitude={0.14} detail={mobile ? 2 : 3} roughness={0.65} exposure={0.5} interactive={!mobile} maxDevicePixelRatio={mobile ? 0.55 : 0.9} />),
+    silkChrome
   ][index];
   return (
     <main className={theme}>
@@ -83,7 +89,7 @@ function App() {
           <p className="eyebrow">INDEPENDENT DIGITAL STUDIO</p>
           <h1>Beyond<br/><em>the ordinary.</em></h1>
           <p className="subtitle">Создаём цифровые продукты, которые работают, впечатляют и открывают новые возможности.</p>
-          <div className="footerline"><span>ORIGINAL REACT BITS</span><span>{variants[index].name.toUpperCase()} · 0{index + 1} / 08</span></div>
+          <div className="footerline"><span>ORIGINAL REACT BITS</span><span>{variants[index].name.toUpperCase()} · 0{index + 1} / 09</span></div>
         </div>}
       </section>
       <footer><span>React Bits + Codrops · мобильная подборка</span><a href="https://github.com/DavidHDev/react-bits" target="_blank" rel="noreferrer">SOURCE · GITHUB ↗</a></footer>
