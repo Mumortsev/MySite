@@ -79,11 +79,11 @@ function App() {
     chromeScene(<SideRays rayColor1="#b5c5d5" rayColor2="#758da7" origin="top-right" speed={0.5} intensity={0.7} density={3} glow={0.4} followMouse={!mobile} maxDevicePixelRatio={mobile ? 0.65 : 1} />),
     chromeScene(<LiquidChrome color="#778594" speed={0.12} amplitude={0.14} detail={mobile ? 2 : 3} roughness={0.65} exposure={0.5} interactive={!mobile} maxDevicePixelRatio={mobile ? 0.55 : 0.9} />),
     silkChrome,
-    <div className="porcelain-scene" aria-label="Фарфоровая скульптурная надпись STUDIO">
+    <div className="porcelain-scene porcelain-scene--alive" aria-label="Живая фарфоровая надпись STUDIO">
       <div className="porcelain-halo" />
       <div className="porcelain-sculpture porcelain-sculpture--one" />
       <div className="porcelain-sculpture porcelain-sculpture--two" />
-      <div className="porcelain-word-wrap"><div className="porcelain-word" data-word="STUDIO">STUDIO</div><div className="porcelain-word-shadow">STUDIO</div></div>
+      <div className="porcelain-paint"><MetallicPaint text="STUDIO" color="#c6b9a9" backgroundColor="transparent" lightMode density={mobile ? 1 : 1.8} softness={0.3} dispersion={0.08} distortion={0.085} edgeBend={0.22} speed={0.65} scale={mobile ? 0.94 : 0.83} dpr={mobile ? 0.85 : dpr} paused={reduced} /></div>
       <div className="porcelain-floor" />
     </div>
   ][index];
