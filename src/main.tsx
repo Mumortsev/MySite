@@ -1,151 +1,97 @@
-import React,{useEffect,useRef,useState} from 'react';
-import {createRoot} from 'react-dom/client';
+import React,{Suspense,useEffect,useRef,useState} from 'react';
+import{createRoot}from'react-dom/client';
+import{Canvas,useFrame,useThree}from'@react-three/fiber';
+import{Environment,Float,MeshTransmissionMaterial,Stars}from'@react-three/drei';
+import gsap from'gsap';
+import * as THREE from'three';
 import './style.css';
 
-const SECTIONS=[
- {id:'gallery',label:'ГАЛЕРЕЯ',sub:'ЦИФРОВАЯ ГАЛЕРЕЯ',description:'Визуальные эксперименты и интерфейсы',items:['Интерактивные миры','Цифровая типографика','Генеративная графика']},
- {id:'works',label:'РАБОТЫ',sub:'ПРОЕКТЫ И РЕШЕНИЯ',description:'Веб-сайты, приложения и AI-инструменты',items:['Веб-разработка','Мобильные приложения','ИИ-решения']},
- {id:'calc',label:'КАЛЬКУЛЯТОР',sub:'ОЦЕНКА ПРОЕКТА',description:'Соберите конфигурацию вашего проекта',items:[]},
- {id:'contact',label:'КОНТАКТЫ',sub:'НАЧНЁМ СОЗДАВАТЬ',description:'Расскажите, какой мир хотите построить',items:[]}
+type Page='works'|'gallery'|'calculator'|'contacts';
+const pages:{id:Page;label:string;eyebrow:string;title:string;intro:string}[]=[
+{id:'works',label:'Работы',eyebrow:'01 / ПРОЕКТЫ',title:'Создаём цифровые впечатления.',intro:'Сайты, приложения и AI-инструменты, в которых технология работает на идею.'},
+{id:'gallery',label:'Галерея',eyebrow:'02 / ЛАБОРАТОРИЯ',title:'Идеи обретают форму.',intro:'Эксперименты с пространством, типографикой, светом и интерактивностью.'},
+{id:'calculator',label:'Калькулятор',eyebrow:'03 / ОЦЕНКА',title:'Давайте посчитаем.',intro:'Соберите предварительную конфигурацию вашего проекта.'},
+{id:'contacts',label:'Контакты',eyebrow:'04 / СВЯЗЬ',title:'Начнём с разговора.',intro:'Расскажите, что хотите создать, — и мы обсудим возможный подход.'}
 ];
-const GLYPHS='01アイウエオカキクケコサシスセソタチツテト<>/{}[]';
-function Matrix({section,phase,onNavigate}){
- const ref=useRef(null);
- useEffect(()=>{
-  const canvas=ref.current,ctx=canvas.getContext('2d',{alpha:false});if(!ctx)return;
-  let w=0,h=0,cell=12,dpr=1,cols=[],masks=[],menuGlyphs=[],frame=0,raf=0,last=0,alive=true;
-  const pointer={x:-1000,y:-1000};
-  const rnd=(a,b)=>a+Math.random()*(b-a);
-  const pick=()=>GLYPHS[Math.floor(Math.random()*GLYPHS.length)];
-  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  function resize(){
-   const rect=canvas.getBoundingClientRect();w=rect.width;h=rect.height;
-   dpr=Math.min(devicePixelRatio||1,1.6,Math.sqrt(1600000/Math.max(1,w*h)));
-   canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
-   cell=w<650?Math.max(7,Math.floor(w/55)):13;
-   const nx=Math.ceil(w/cell),ny=Math.ceil(h/cell);
-   cols=Array.from({length:nx},(_,x)=>({x,head:rnd(-ny,ny),speed:rnd(.13,.48),length:Math.floor(rnd(8,24)),offset:rnd(0,100)}));
-   masks=Array.from({length:ny},()=>new Uint8Array(nx));
-   if(section!==null)return;
-   const off=document.createElement('canvas');off.width=nx;off.height=ny;const c=off.getContext('2d');c.fillStyle='#fff';c.textAlign='center';c.textBaseline='middle';
-   const logoSize=Math.min(ny*.22,nx*.205);
-   c.font='900 '+logoSize+'px Arial,sans-serif';
-   c.fillText('CODE_MUM',nx/2,ny*.47,nx*.94);
-   // The menu has its own finer sampling resolution but shares the exact screen coordinates and glyph renderer.
-   // Each Cyrillic letter is sampled at >= 6 pixels of height instead of being crushed into 2-3 grid rows.
-   menuGlyphs=[];
-   const menuFont=Math.max(17,Math.min(28,w*.046));
-   const fine=Math.max(2.4,menuFont/10);
-   const labels=[
-    {text:'ГАЛЕРЕЯ',anchor:'left',x:w*.045,y:h*.135},
-    {text:'РАБОТЫ',anchor:'right',x:w*.955,y:h*.135},
-    {text:'КАЛЬКУЛЯТОР',anchor:'left',x:w*.045,y:h*.865},
-    {text:'КОНТАККТЫ',anchor:'right',x:w*.955,y:h*.865}
-   ];
-   labels[3].text='КОНТАКТЫ';
-   for(const item of labels){
-    const mask=document.createElement('canvas');
-    const mc=mask.getContext('2d');
-    mc.font='900 '+menuFont+'px Arial,Helvetica,sans-serif';
-    const maxWidth=w*.44;
-    const measured=mc.measureText(item.text).width;
-    const font=Math.min(menuFont,menuFont*maxWidth/Math.max(measured,1));
-    const mw=Math.ceil(maxWidth/fine),mh=Math.ceil(font*1.5/fine);
-    mask.width=mw;mask.height=mh;
-    mc.fillStyle='#fff';mc.textAlign=item.anchor;mc.textBaseline='middle';
-    mc.font='900 '+font/fine+'px Arial,Helvetica,sans-serif';
-    mc.fillText(item.text,item.anchor==='left'?0:mw,mh/2,mw);
-    const pixels=mc.getImageData(0,0,mw,mh).data;
-    const x0=item.anchor==='left'?item.x:item.x-mw*fine;
-    const y0=item.y-mh*fine/2;
-    for(let yy=0;yy<mh;yy++)for(let xx=0;xx<mw;xx++){
-     if(pixels[(yy*mw+xx)*4+3]>105)menuGlyphs.push({x:x0+xx*fine,y:y0+yy*fine,seed:(xx*13+yy*7)%GLYPHS.length,size:fine});
-    }
-   }
-   const pix=c.getImageData(0,0,nx,ny).data;
-   for(let y=0;y<ny;y++)for(let x=0;x<nx;x++)if(pix[(y*nx+x)*4+3]>85)masks[y][x]=1;
-  }
-  const ro=new ResizeObserver(resize);ro.observe(canvas);resize();
-  function render(time){
-   if(!alive)return;
-   if(time-last<30){raf=requestAnimationFrame(render);return}last=time;frame++;
-   ctx.fillStyle='#010703';ctx.fillRect(0,0,w,h);
-   const halo=ctx.createRadialGradient(w/2,h*.46,0,w/2,h*.46,w*.8);halo.addColorStop(0,'#0c2618');halo.addColorStop(1,'#010703');ctx.fillStyle=halo;ctx.fillRect(0,0,w,h);
-   const nx=cols.length,ny=masks.length;
-   ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold '+Math.max(8,cell-1)+'px monospace';
-   const forming=Math.min(1,Math.max(0,(frame-8)/65));
-   for(const col of cols){
-    col.head+=col.speed*(reduce?0:1);
-    if(col.head-col.length>ny)col.head=rnd(-ny,0);
-    const x=col.x*cell+cell/2;
-    for(let y=0;y<ny;y++){
-     const py=y*cell+cell/2;
-     const inShape=section===null&&masks[y]?.[col.x]===1;
-     const delta=col.head-y;
-     const falling=delta>=0&&delta<col.length;
-     if(!falling&&!inShape)continue;
-     const distance=Math.hypot(x-pointer.x,py-pointer.y);
-     const near=Math.max(0,1-distance/100);
-     let alpha=falling?.12+.52*(1-delta/col.length):0;
-     if(inShape)alpha=Math.max(alpha,forming*(.77+.2*Math.sin(frame*.035+col.x*.4+y*.3)));
-     ctx.fillStyle=inShape?'rgba(171,255,193,'+Math.min(1,alpha)+')':falling&&delta<1?'rgba(205,255,222,.9)':'rgba(36,215,108,'+Math.min(1,alpha+near*.24)+')';
-     if(inShape){ctx.shadowBlur=3;ctx.shadowColor='#42f68d'}
-     ctx.fillText(GLYPHS[(col.x*13+y*7+Math.floor(frame/(inShape?9:5)))%GLYPHS.length],x,py);
-     ctx.shadowBlur=0;
-    }
-   }
-   if(section===null){
-    // Glyphs for menu and logo belong to one animated canvas, not HTML text overlays.
-    ctx.font='bold '+Math.max(3,menuGlyphs[0]?.size||3)+'px monospace';
-    for(const g of menuGlyphs){
-     const light=.74+.22*Math.sin(frame*.05+g.seed);
-     ctx.fillStyle='rgba(175,255,199,'+(forming*light)+')';
-     ctx.fillText(GLYPHS[(g.seed+Math.floor(frame/9))%GLYPHS.length],g.x,g.y);
-    }
-   }
-   if(phase!=='home'){
-    const cx=w/2,cy=h/2;
-    const strength=phase==='enter'?Math.min(1,frame/38):phase==='exit'?Math.min(1,frame/35):.25;
-    ctx.save();ctx.translate(cx,cy);
-    for(let i=0;i<50;i++){const a=i*2.39996+frame*.006,r=(i/50)*Math.max(w,h)*strength;ctx.strokeStyle='rgba(90,255,160,'+(1-i/50)*.3+')';ctx.beginPath();ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r);ctx.lineTo(Math.cos(a)*(r+30*strength),Math.sin(a)*(r+30*strength));ctx.stroke()}
-    ctx.restore();
-   }
-   raf=requestAnimationFrame(render);
-  }
-  raf=requestAnimationFrame(render);
-  const move=e=>{const r=canvas.getBoundingClientRect();pointer.x=e.clientX-r.left;pointer.y=e.clientY-r.top};
-  canvas.addEventListener('pointermove',move);
-  return()=>{alive=false;cancelAnimationFrame(raf);ro.disconnect();canvas.removeEventListener('pointermove',move)};
- },[section,phase]);
- return <canvas ref={ref} className="matrix" aria-hidden="true"/>;
+function Sculpture({active}:{active:boolean}){
+ const group=useRef<THREE.Group>(null);
+ const knot=useRef<THREE.Mesh>(null);
+ useFrame(({clock,pointer},dt)=>{
+  if(!group.current||!knot.current)return;
+  const t=clock.elapsedTime;
+  group.current.rotation.y=THREE.MathUtils.damp(group.current.rotation.y,active?Math.PI*1.2+pointer.x*.12:pointer.x*.17+Math.sin(t*.17)*.2,1.4,dt);
+  group.current.rotation.x=THREE.MathUtils.damp(group.current.rotation.x,pointer.y*.09+Math.sin(t*.24)*.08,1.1,dt);
+  knot.current.rotation.z+=dt*(active?.19:.065);
+  const scale=active?1.8:1;
+  group.current.scale.setScalar(THREE.MathUtils.damp(group.current.scale.x,scale,1.4,dt));
+ });
+ return <group ref={group} position={[0,0,0]}>
+ <Float speed={1.1} rotationIntensity={.08} floatIntensity={.2}>
+ <mesh ref={knot} castShadow><torusKnotGeometry args={[1.14,.32,220,24,2,3]}/><meshPhysicalMaterial color="#778a80" metalness={.94} roughness={.19} clearcoat={1} clearcoatRoughness={.12} envMapIntensity={1.6}/></mesh>
+ <mesh rotation={[.4,.2,0]}><torusGeometry args={[1.58,.009,8,160]}/><meshBasicMaterial color="#75dca5" transparent opacity={.28}/></mesh>
+ </Float></group>;
+}
+function Corridor({entered,selected}:{entered:boolean;selected:Page}){
+ const root=useRef<THREE.Group>(null);
+ useFrame((_,dt)=>{if(root.current)root.current.position.z=THREE.MathUtils.damp(root.current.position.z,entered?0:-25,1.5,dt)});
+ return <group ref={root} position={[0,0,-25]}>
+ {Array.from({length:11},(_,i)=>{const z=-i*5-5;return <group key={i} position={[0,0,z]}>
+ <mesh position={[-5,0,0]}><boxGeometry args={[.14,7,.14]}/><meshStandardMaterial color="#223b31" metalness={.8} roughness={.35}/></mesh>
+ <mesh position={[5,0,0]}><boxGeometry args={[.14,7,.14]}/><meshStandardMaterial color="#223b31" metalness={.8} roughness={.35}/></mesh>
+ <mesh position={[0,3.5,0]}><boxGeometry args={[10,.12,.14]}/><meshStandardMaterial color="#1d3b2b" metalness={.75}/></mesh>
+ <mesh position={[0,-3.5,0]}><boxGeometry args={[10,.1,.14]}/><meshStandardMaterial color="#183326" metalness={.75}/></mesh>
+ <mesh position={[-4.9,0,.05]}><boxGeometry args={[.025,6.7,.04]}/><meshBasicMaterial color="#46bb7a" transparent opacity={.25}/></mesh>
+ <mesh position={[4.9,0,.05]}><boxGeometry args={[.025,6.7,.04]}/><meshBasicMaterial color="#46bb7a" transparent opacity={.25}/></mesh>
+ </group>})}
+ <mesh rotation={[-Math.PI/2,0,0]} position={[0,-3.54,-28]}><planeGeometry args={[10,80]}/><meshStandardMaterial color="#09140e" metalness={.5} roughness={.36}/></mesh>
+ <mesh position={[0,0,-58]}><planeGeometry args={[10,7]}/><meshBasicMaterial color="#143724" transparent opacity={.6}/></mesh>
+ </group>;
+}
+function CameraRig({entered}:{entered:boolean}){
+ const{camera}=useThree();const pos=useRef({z:8});
+ useEffect(()=>{gsap.to(pos.current,{z:entered?3.8:8,duration:entered?2.2:1.4,ease:'power3.inOut'})},[entered]);
+ useFrame(({pointer},dt)=>{camera.position.z=pos.current.z;camera.position.x=THREE.MathUtils.damp(camera.position.x,pointer.x*(entered?.15:.25),1,dt);camera.position.y=THREE.MathUtils.damp(camera.position.y,pointer.y*(entered?.1:.16),1,dt);camera.lookAt(0,0,-2)});
+ return null;
+}
+function World({entered,selected}:{entered:boolean;selected:Page}){
+ return <Canvas dpr={[1,1.5]} camera={{position:[0,0,8],fov:42}} gl={{antialias:true,alpha:false,powerPreference:'high-performance'}} onCreated={({gl})=>gl.setClearColor('#060a08')}>
+ <fog attach="fog" args={['#060a08',9,67]}/>
+ <ambientLight intensity={.75}/><hemisphereLight args={['#d7ffe8','#102519',1.1]}/>
+ <spotLight position={[3,6,5]} intensity={100} distance={25} angle={.5} penumbra={1} color="#d3ffe6" />
+ <pointLight position={[-4,-2,3]} intensity={35} distance={15} color="#2da66b"/>
+ <Suspense fallback={null}><Environment preset="city"/></Suspense>
+ <Sculpture active={entered}/><Corridor entered={entered} selected={selected}/><CameraRig entered={entered}/>
+ </Canvas>;
+}
+function Calculator(){
+ const[type,setType]=useState('site'),[pages,setPages]=useState(5),[ai,setAi]=useState(false);
+ const base=type==='site'?35000:type==='app'?110000:65000;
+ const total=base+(pages-1)*2500+(ai?30000:0);
+ return <div className="form-panel"><label>Тип проекта<select value={type} onChange={e=>setType(e.target.value)}><option value="site">Веб-сайт</option><option value="app">Приложение</option><option value="ai">AI-инструмент</option></select></label><label>Количество экранов: {pages}<input type="range" min="1" max="20" value={pages} onChange={e=>setPages(Number(e.target.value))}/></label><label className="check"><input type="checkbox" checked={ai} onChange={e=>setAi(e.target.checked)}/> Интеграция AI</label><div className="estimate"><span>Ориентировочная стоимость</span><strong>{total.toLocaleString('ru-RU')} ₽</strong><small>Предварительная оценка, не публичная оферта</small></div></div>;
+}
+function Contacts(){
+ const[name,setName]=useState(''),[address,setAddress]=useState(''),[message,setMessage]=useState('');
+ return <form className="form-panel" onSubmit={e=>{e.preventDefault();window.location.href='mailto:hello@codemum.ru?subject='+encodeURIComponent('Проект CODE_MUM')+'&body='+encodeURIComponent(name+' / '+address+'\n\n'+message)}}>
+ <label>Имя<input required value={name} onChange={e=>setName(e.target.value)} placeholder="Как к вам обращаться"/></label>
+ <label>Контакт<input required value={address} onChange={e=>setAddress(e.target.value)} placeholder="Email или Telegram"/></label>
+ <label>Ваш проект<textarea required rows={4} value={message} onChange={e=>setMessage(e.target.value)} placeholder="Расскажите об идее"/></label>
+ <button className="primary" type="submit">Создать письмо ↗</button><small>Откроется почтовое приложение для отправки.</small></form>;
 }
 function App(){
- const [section,setSection]=useState(null),[phase,setPhase]=useState('home'),[pending,setPending]=useState(null);
- const [target,setTarget]=useState({x:50,y:50});
- const [type,setType]=useState('site'),[pages,setPages]=useState(5),[ai,setAi]=useState(false);
- const [form,setForm]=useState({name:'',email:'',message:''});
- const timers=useRef([]);
- const schedule=(fn,ms)=>{const id=window.setTimeout(fn,ms);timers.current.push(id)};
- useEffect(()=>()=>timers.current.forEach(clearTimeout),[]);
- function enter(id){if(phase!=='home')return;const coords={gallery:[18,13.5],works:[82,13.5],calc:[18,86.5],contact:[82,86.5]};const [x,y]=coords[id];setTarget({x,y});setPending(id);setPhase('enter');schedule(()=>{setSection(id);setPhase('world');setPending(null)},1750)}
- function exit(){if(phase!=='world')return;setPhase('exit');schedule(()=>{setSection(null);setPhase('home')},1250)}
- const selected=SECTIONS.find(s=>s.id===section);
- const price=(type==='site'?35000:type==='app'?110000:65000)+Math.max(0,pages-1)*2500+(ai?30000:0);
- const regions=[['gallery','tl'],['works','tr'],['calc','bl'],['contact','br']];
- return <main><section className={'screen phase-'+phase}>
- <Matrix section={section} phase={phase}/>
- {phase==='home'&&<><h1 className="sr-only">CODE_MUM — цифровая студия</h1>{regions.map(([id,pos])=><button key={id} className={'hotspot '+pos} onClick={()=>enter(id)} aria-label={'Открыть '+SECTIONS.find(s=>s.id===id).label}><span className="sr-only">{SECTIONS.find(s=>s.id===id).label}</span></button>)}<div className="home-hint">ВЫБЕРИТЕ РАЗДЕЛ — ВОЙДИТЕ В КОД</div></>}
- {phase==='enter'&&<div className="warp" key="enter"><div className="warp-vortex"/><div className="warp-label">ВХОД В МИР / {SECTIONS.find(s=>s.id===pending)?.label}</div></div>}
- {section&&<div className={'world '+(phase==='exit'?'world-out':'world-in')}>
-  <div className="world-bar"><button className="back" onClick={exit} disabled={phase!=='world'}>← В МАТРИЦУ</button><span>CODE_MUM / {selected?.label}</span></div>
-  <div className="world-scene"><div className="world-grid"/><div className="world-inner">
-   <div className="world-index">МИР 0{SECTIONS.findIndex(s=>s.id===section)+1} / 04 <span className="pulse">● СИСТЕМА АКТИВНА</span></div>
-   <h2>{selected?.sub}</h2><p className="world-desc">{selected?.description}</p>
-   {(section==='gallery'||section==='works')&&<div className="world-cards">{selected.items.map((item,i)=><article key={item} className="world-card"><span>0{i+1} / CODE_MUM</span><div className="card-art"><div className={'artifact art-'+i}><i/><i/><i/></div></div><h3>{item}</h3><p>{section==='works'?'Направление разработки студии':'Направление визуальных экспериментов'}</p></article>)}</div>}
-   {section==='calc'&&<div className="calculator"><label>ТИП ПРОЕКТА<select value={type} onChange={e=>setType(e.target.value)}><option value="site">Сайт</option><option value="app">Мобильное приложение</option><option value="ai">ИИ-решение</option></select></label><label>КОЛИЧЕСТВО ЭКРАНОВ / СТРАНИЦ: {pages}<input type="range" min="1" max="20" value={pages} onChange={e=>setPages(Number(e.target.value))}/></label><label className="check"><input type="checkbox" checked={ai} onChange={e=>setAi(e.target.checked)}/> ИНТЕГРАЦИЯ ИИ</label><div className="total"><span>ОРИЕНТИРОВОЧНАЯ СТОИМОСТЬ</span><strong>{price.toLocaleString('ru-RU')} ₽</strong><small>Предварительная оценка, не публичная оферта</small></div><a className="action" href={'mailto:hello@codemum.ru?subject='+encodeURIComponent('Расчёт проекта CODE_MUM')+'&body='+encodeURIComponent('Тип: '+type+'; экранов: '+pages+'; ИИ: '+(ai?'да':'нет')+'; оценка: '+price+' ₽')}>ОТПРАВИТЬ РАСЧЁТ ↗</a></div>}
-   {section==='contact'&&<form className="contact" onSubmit={e=>{e.preventDefault();window.location.href='mailto:hello@codemum.ru?subject='+encodeURIComponent('Проект CODE_MUM от '+form.name)+'&body='+encodeURIComponent(form.message+'\n\nИмя: '+form.name+'\nКонтакт: '+form.email)}}><label>КАК ВАС ЗОВУТ<input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Ваше имя"/></label><label>КАК С ВАМИ СВЯЗАТЬСЯ<input required value={form.email} onChange={e=>setForm({...form,email:e.target.value})} placeholder="Email или Telegram"/></label><label>РАССКАЖИТЕ О ПРОЕКТЕ<textarea required rows={4} value={form.message} onChange={e=>setForm({...form,message:e.target.value})} placeholder="Что хотите создать?"/></label><button type="submit" className="action">СОЗДАТЬ ПИСЬМО ↗</button><small>Откроется ваше почтовое приложение для отправки заявки.</small></form>}
-  </div></div>
- </div>}
- </section></main>;
+ const[entered,setEntered]=useState(false),[selected,setSelected]=useState<Page>('works'),[transition,setTransition]=useState(false);
+ const[reduced,setReduced]=useState(false);
+ useEffect(()=>{const m=window.matchMedia('(prefers-reduced-motion: reduce)');setReduced(m.matches)},[]);
+ const enter=()=>{if(transition)return;setTransition(true);setEntered(true);window.setTimeout(()=>setTransition(false),reduced?150:2400)};
+ const leave=()=>{setEntered(false);setTransition(false)};
+ const current=pages.find(p=>p.id===selected)!;
+ return <main className={'app '+(entered?'is-entered':'is-intro')}>
+ <div className="stage"><World entered={entered} selected={selected}/><div className="stage-vignette"/></div>
+ <header className="site-header"><button className="brand" onClick={leave}>CODE<span>_</span>MUM</button>{entered&&<nav aria-label="Основная навигация">{pages.map(p=><button key={p.id} className={selected===p.id?'current':''} onClick={()=>setSelected(p.id)}>{p.label}</button>)}</nav>}<span className="header-index">DIGITAL STUDIO / 2026</span></header>
+ {!entered?<section className="intro" aria-label="Главная"><div className="intro-copy"><div className="eyebrow"><i/> INDEPENDENT DIGITAL STUDIO</div><h1>Beyond<br/><em>the code.</em></h1><p>Создаём цифровые миры, которые хочется исследовать.</p><button className="primary enter" onClick={enter} disabled={transition}>Войти в пространство <span>↗</span></button></div><div className="intro-bottom"><span>ДИЗАЙН / РАЗРАБОТКА / AI</span><span>01 — ∞</span></div></section>:
+ <section className="content" key={selected}><div className="content-head"><span className="eyebrow">{current.eyebrow}</span><h2>{current.title}</h2><p>{current.intro}</p></div>
+ {(selected==='works'||selected==='gallery')&&<div className="projects">{(selected==='works'?['Сайты нового поколения','Мобильные продукты','Интеллектуальные инструменты']:['Пространственные интерфейсы','Живая типографика','Цифровые материалы']).map((name,i)=><article className="project" key={name}><span>0{i+1} / {selected==='works'?'НАПРАВЛЕНИЕ':'ЭКСПЕРИМЕНТ'}</span><div className={'project-art art-'+i}><div className="project-shape"/></div><h3>{name}</h3><p>{selected==='works'?'Направление работы студии':'Концептуальное исследование'}</p></article>)}</div>}
+ {selected==='calculator'&&<Calculator/>}{selected==='contacts'&&<Contacts/>}
+ <footer><span>CODE_MUM © 2026</span><button onClick={leave}>Вернуться к началу ↑</button></footer></section>}
+ </main>;
 }
-createRoot(document.getElementById('root')).render(<App/>);
+createRoot(document.getElementById('root')!).render(<App/>);
