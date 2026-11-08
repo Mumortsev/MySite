@@ -94,7 +94,16 @@ function Matrix({section,phase,onNavigate}){
      ctx.shadowBlur=0;
     }
    }
-   if(section===null){\n    // Glyphs for menu and logo belong to one animated canvas, not HTML text overlays.\n    ctx.font='bold '+Math.max(3,menuGlyphs[0]?.size||3)+'px monospace';\n    for(const g of menuGlyphs){\n     const light=.74+.22*Math.sin(frame*.05+g.seed);\n     ctx.fillStyle='rgba(175,255,199,'+(forming*light)+')';\n     ctx.fillText(GLYPHS[(g.seed+Math.floor(frame/9))%GLYPHS.length],g.x,g.y);\n    }\n   }\n   if(phase!=='home'){
+   if(section===null){
+    // Glyphs for menu and logo belong to one animated canvas, not HTML text overlays.
+    ctx.font='bold '+Math.max(3,menuGlyphs[0]?.size||3)+'px monospace';
+    for(const g of menuGlyphs){
+     const light=.74+.22*Math.sin(frame*.05+g.seed);
+     ctx.fillStyle='rgba(175,255,199,'+(forming*light)+')';
+     ctx.fillText(GLYPHS[(g.seed+Math.floor(frame/9))%GLYPHS.length],g.x,g.y);
+    }
+   }
+   if(phase!=='home'){
     const cx=w/2,cy=h/2;
     const strength=phase==='enter'?Math.min(1,frame/38):phase==='exit'?Math.min(1,frame/35):.25;
     ctx.save();ctx.translate(cx,cy);
@@ -111,7 +120,8 @@ function Matrix({section,phase,onNavigate}){
  return <canvas ref={ref} className="matrix" aria-hidden="true"/>;
 }
 function App(){
- const [section,setSection]=useState(null),[phase,setPhase]=useState('home'),[pending,setPending]=useState(null);\n const [target,setTarget]=useState({x:50,y:50});
+ const [section,setSection]=useState(null),[phase,setPhase]=useState('home'),[pending,setPending]=useState(null);
+ const [target,setTarget]=useState({x:50,y:50});
  const [type,setType]=useState('site'),[pages,setPages]=useState(5),[ai,setAi]=useState(false);
  const [form,setForm]=useState({name:'',email:'',message:''});
  const timers=useRef([]);
