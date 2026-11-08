@@ -1,7 +1,7 @@
 import React,{Suspense,useEffect,useRef,useState} from 'react';
 import{createRoot}from'react-dom/client';
 import{Canvas,useFrame,useThree}from'@react-three/fiber';
-import{Environment,Float}from'@react-three/drei';
+import{Environment,Float,MeshPortalMaterial}from'@react-three/drei';
 import gsap from'gsap';
 import * as THREE from'three';
 import './style.css';
@@ -13,44 +13,51 @@ const pages:{id:Page;label:string;eyebrow:string;title:string;intro:string}[]=[
 {id:'calculator',label:'Калькулятор',eyebrow:'03 / ОЦЕНКА',title:'Давайте посчитаем.',intro:'Соберите предварительную конфигурацию вашего проекта.'},
 {id:'contacts',label:'Контакты',eyebrow:'04 / СВЯЗЬ',title:'Начнём с разговора.',intro:'Расскажите, что хотите создать, — и мы обсудим возможный подход.'}
 ];
-function Sculpture({active}:{active:boolean}){
- const group=useRef<THREE.Group>(null);
- const knot=useRef<THREE.Mesh>(null);
- useFrame(({clock,pointer},dt)=>{
-  if(!group.current||!knot.current)return;
-  const t=clock.elapsedTime;
-  group.current.rotation.y=THREE.MathUtils.damp(group.current.rotation.y,active?Math.PI*1.2+pointer.x*.12:pointer.x*.17+Math.sin(t*.17)*.2,1.4,dt);
-  group.current.rotation.x=THREE.MathUtils.damp(group.current.rotation.x,pointer.y*.09+Math.sin(t*.24)*.08,1.1,dt);
-  knot.current.rotation.z+=dt*(active?.19:.065);
-  group.current.position.z=THREE.MathUtils.damp(group.current.position.z,active?-18:0,1.25,dt);
-  const scale=active?1.8:1;
-  group.current.scale.setScalar(THREE.MathUtils.damp(group.current.scale.x,scale,1.4,dt));
- });
- return <group ref={group} position={[0,0,0]}>
- <Float speed={1.1} rotationIntensity={.08} floatIntensity={.2}>
- <mesh ref={knot} castShadow><torusKnotGeometry args={[1.14,.32,220,24,2,3]}/><meshPhysicalMaterial color="#778a80" metalness={.94} roughness={.19} clearcoat={1} clearcoatRoughness={.12} envMapIntensity={1.6}/></mesh>
- <mesh rotation={[.4,.2,0]}><torusGeometry args={[1.58,.009,8,160]}/><meshBasicMaterial color="#75dca5" transparent opacity={.28}/></mesh>
- </Float></group>;
-}
-function Corridor({entered,selected}:{entered:boolean;selected:Page}){
+/* Drei MeshPortalMaterial is the official GitHub portal implementation.
+   The sculpture is an architectural chrome aperture, not a torus knot. */
+function PortalArchitecture({entered}:{entered:boolean}){
  const root=useRef<THREE.Group>(null);
- useFrame((_,dt)=>{if(root.current)root.current.position.z=THREE.MathUtils.damp(root.current.position.z,entered?0:-25,1.5,dt)});
- return <group ref={root} position={[0,0,-25]}>
- {Array.from({length:11},(_,i)=>{const z=-i*5-5;return <group key={i} position={[0,0,z]}>
- <mesh position={[-5,0,0]}><boxGeometry args={[.14,7,.14]}/><meshStandardMaterial color="#223b31" metalness={.8} roughness={.35}/></mesh>
- <mesh position={[5,0,0]}><boxGeometry args={[.14,7,.14]}/><meshStandardMaterial color="#223b31" metalness={.8} roughness={.35}/></mesh>
- <mesh position={[0,3.5,0]}><boxGeometry args={[10,.12,.14]}/><meshStandardMaterial color="#1d3b2b" metalness={.75}/></mesh>
- <mesh position={[0,-3.5,0]}><boxGeometry args={[10,.1,.14]}/><meshStandardMaterial color="#183326" metalness={.75}/></mesh>
- <mesh position={[-4.9,0,.05]}><boxGeometry args={[.025,6.7,.04]}/><meshBasicMaterial color="#46bb7a" transparent opacity={.25}/></mesh>
- <mesh position={[4.9,0,.05]}><boxGeometry args={[.025,6.7,.04]}/><meshBasicMaterial color="#46bb7a" transparent opacity={.25}/></mesh>
+ const portal=useRef<any>(null);
+ const shell=useRef<THREE.Group>(null);
+ useFrame(({clock,pointer},dt)=>{
+  if(portal.current)portal.current.blend=THREE.MathUtils.damp(portal.current.blend,entered?1:0,1.7,dt);
+  if(root.current){root.current.rotation.y=THREE.MathUtils.damp(root.current.rotation.y,entered?0:pointer.x*.08,1,dt);root.current.rotation.x=THREE.MathUtils.damp(root.current.rotation.x,entered?0:-pointer.y*.06,1,dt)}
+  if(shell.current){shell.current.rotation.z=clock.elapsedTime*.018;const s=THREE.MathUtils.damp(shell.current.scale.x,entered?1.22:1,1.5,dt);shell.current.scale.setScalar(s)}
+ });
+ return <group ref={root}>
+ <group ref={shell}>
+  <mesh rotation={[0,0,0]}><torusGeometry args={[1.8,.085,20,160]}/><meshPhysicalMaterial color="#87968e" metalness={1} roughness={.13} clearcoat={1} envMapIntensity={2}/></mesh>
+  <mesh rotation={[.18,.34,.22]}><torusGeometry args={[1.93,.026,12,160]}/><meshPhysicalMaterial color="#b4c3b9" metalness={1} roughness={.12}/></mesh>
+  <mesh rotation={[-.16,-.24,-.28]}><torusGeometry args={[2.04,.018,12,160]}/><meshBasicMaterial color="#4cbf82" transparent opacity={.6}/></mesh>
+  <mesh><ringGeometry args={[1.68,1.72,128]}/><meshBasicMaterial color="#6effa5" transparent opacity={.45} side={THREE.DoubleSide}/></mesh>
+ </group>
+ <mesh>
+  <circleGeometry args={[1.69,128]}/>
+  <MeshPortalMaterial ref={portal} blur={0.06} resolution={256} transparent>
+   <color attach="background" args={['#020907']}/>
+   <ambientLight intensity={.6}/>
+   <pointLight position={[0,1,-3]} intensity={28} distance={12} color="#54e993"/>
+   <Corridor/>
+  </MeshPortalMaterial>
+ </mesh>
+ </group>;
+}
+function Corridor(){
+ return <group position={[0,0,-3]}>
+ {Array.from({length:15},(_,i)=>{const z=-i*4;return <group key={i} position={[0,0,z]}>
+  <mesh position={[-3.3,0,0]}><boxGeometry args={[.1,5.5,.1]}/><meshStandardMaterial color="#385d4b" metalness={.8} roughness={.25}/></mesh>
+  <mesh position={[3.3,0,0]}><boxGeometry args={[.1,5.5,.1]}/><meshStandardMaterial color="#385d4b" metalness={.8} roughness={.25}/></mesh>
+  <mesh position={[0,2.75,0]}><boxGeometry args={[6.7,.1,.1]}/><meshStandardMaterial color="#385d4b" metalness={.8} roughness={.25}/></mesh>
+  <mesh position={[0,-2.75,0]}><boxGeometry args={[6.7,.1,.1]}/><meshStandardMaterial color="#385d4b" metalness={.8} roughness={.25}/></mesh>
+  <mesh position={[-3.2,0,.02]}><boxGeometry args={[.018,5.3,.025]}/><meshBasicMaterial color="#5adf94" transparent opacity={.45}/></mesh>
+  <mesh position={[3.2,0,.02]}><boxGeometry args={[.018,5.3,.025]}/><meshBasicMaterial color="#5adf94" transparent opacity={.45}/></mesh>
  </group>})}
- <mesh rotation={[-Math.PI/2,0,0]} position={[0,-3.54,-28]}><planeGeometry args={[10,80]}/><meshStandardMaterial color="#09140e" metalness={.5} roughness={.36}/></mesh>
- <mesh position={[0,0,-58]}><planeGeometry args={[10,7]}/><meshBasicMaterial color="#143724" transparent opacity={.6}/></mesh>
+ <mesh rotation={[-Math.PI/2,0,0]} position={[0,-2.79,-28]}><planeGeometry args={[6.7,70]}/><meshStandardMaterial color="#09140e" metalness={.7} roughness={.3}/></mesh>
  </group>;
 }
 function CameraRig({entered}:{entered:boolean}){
  const{camera}=useThree();const pos=useRef({z:8});
- useEffect(()=>{gsap.to(pos.current,{z:entered?3.8:8,duration:entered?2.2:1.4,ease:'power3.inOut'})},[entered]);
+ useEffect(()=>{gsap.to(pos.current,{z:entered?-2.8:8,duration:entered?2.8:1.6,ease:'power3.inOut'})},[entered]);
  useFrame(({pointer},dt)=>{camera.position.z=pos.current.z;camera.position.x=THREE.MathUtils.damp(camera.position.x,pointer.x*(entered?.15:.25),1,dt);camera.position.y=THREE.MathUtils.damp(camera.position.y,pointer.y*(entered?.1:.16),1,dt);camera.lookAt(0,0,-2)});
  return null;
 }
@@ -61,7 +68,7 @@ function World({entered,selected}:{entered:boolean;selected:Page}){
  <spotLight position={[3,6,5]} intensity={100} distance={25} angle={.5} penumbra={1} color="#d3ffe6" />
  <pointLight position={[-4,-2,3]} intensity={35} distance={15} color="#2da66b"/>
  <Suspense fallback={null}><Environment preset="city"/></Suspense>
- <Sculpture active={entered}/><Corridor entered={entered} selected={selected}/><CameraRig entered={entered}/>
+ <PortalArchitecture entered={entered}/><CameraRig entered={entered}/>
  </Canvas>;
 }
 function Calculator(){
@@ -82,7 +89,7 @@ function App(){
  const[entered,setEntered]=useState(false),[selected,setSelected]=useState<Page>('works'),[transition,setTransition]=useState(false);
  const[reduced,setReduced]=useState(false);
  useEffect(()=>{const m=window.matchMedia('(prefers-reduced-motion: reduce)');setReduced(m.matches)},[]);
- const enter=()=>{if(transition)return;setTransition(true);setEntered(true);window.setTimeout(()=>setTransition(false),reduced?150:2400)};
+ const enter=()=>{if(transition)return;setTransition(true);setEntered(true);window.setTimeout(()=>setTransition(false),reduced?150:3000)};
  const leave=()=>{setEntered(false);setTransition(false)};
  const current=pages.find(p=>p.id===selected)!;
  return <main className={'app '+(entered?'is-entered':'is-intro')}>
