@@ -4,21 +4,21 @@ import './style.css';
 
 const Silk = lazy(() => import('./components/ReactBits/Silk/Silk.jsx'));
 const Lightning = lazy(() => import('./components/ReactBits/Lightning/Lightning.jsx'));
-const Waves = lazy(() => import('./components/ReactBits/Waves/Waves.jsx'));
 const MetallicPaint = lazy(() => import('./components/ReactBits/MetallicPaint/MetallicPaint.jsx'));
-const Iridescence = lazy(() => import('./components/ReactBits/Iridescence/Iridescence.jsx'));
-const Ballpit = lazy(() => import('./components/ReactBits/Ballpit/Ballpit.jsx'));
-const MagnetLines = lazy(() => import('./components/ReactBits/MagnetLines/MagnetLines.jsx'));
+const LightRays = lazy(() => import('./components/ReactBits/LightRays/LightRays.jsx'));
+const DarkVeil = lazy(() => import('./components/ReactBits/DarkVeil/DarkVeil.jsx'));
+const FloatingLines = lazy(() => import('./components/ReactBits/FloatingLines/FloatingLines.jsx'));
+const SideRays = lazy(() => import('./components/ReactBits/SideRays/SideRays.jsx'));
+const LiquidChrome = lazy(() => import('./components/ReactBits/LiquidChrome/LiquidChrome.jsx'));
 const variants = [
   { name: 'Silk', label: 'Светлая · шёлк', theme: 'light' },
-  { name: 'Lightning', label: 'Тёмная · молния', theme: 'dark' },
-  { name: 'Waves', label: 'Тёмная · линии', theme: 'dark' },
-  { name: 'Metallic Paint', label: 'Тёмная · хром', theme: 'dark' },
-  { name: 'Iridescence', label: 'Светлая · перламутр', theme: 'light' },
-  { name: 'Ballpit', label: 'Тёмная · сферы', theme: 'dark' },
-  { name: 'Magnet Lines', label: 'Тёмная · магнитные линии', theme: 'dark' },
-  { name: 'Liquid Distortion', label: 'Тёмная · слайдшоу', theme: 'dark' },
-  { name: 'Chrome × Lightning', label: 'Тёмная · хром и молнии', theme: 'dark' }
+  { name: 'Lightning', label: 'Тёмная · молнии', theme: 'dark' },
+  { name: 'Chrome × Lightning', label: 'Хром · редкие молнии', theme: 'dark' },
+  { name: 'Chrome × Light Rays', label: 'Хром · световые лучи', theme: 'dark' },
+  { name: 'Chrome × Dark Veil', label: 'Хром · тёмная дымка', theme: 'dark' },
+  { name: 'Chrome × Floating Lines', label: 'Хром · линии', theme: 'dark' },
+  { name: 'Chrome × Side Rays', label: 'Хром · боковой свет', theme: 'dark' },
+  { name: 'Chrome × Liquid Chrome', label: 'Хром · жидкий металл', theme: 'dark' }
 ];
 
 function IntermittentLightning({ mobile, dpr, reduced }) {
@@ -61,28 +61,29 @@ function App() {
   }, []);
   const theme = variants[index].theme;
   const dpr = mobile ? Math.min(window.devicePixelRatio || 1, 1) : Math.min(window.devicePixelRatio || 1, 1.5);
+  const chromeText = <div className="chrome-layer chrome-layer--text"><MetallicPaint text="STUDIO" color="#dce7ef" backgroundColor="#000000" density={mobile ? 0.85 : 1.5} distortion={0.045} dispersion={0.2} scale={mobile ? 0.95 : 0.8} speed={0.48} dpr={mobile ? 0.8 : dpr} paused={reduced} /></div>;
+  const chromeScene = background => <div className="chrome-lightning"><div className="chrome-layer chrome-layer--background">{background}</div>{chromeText}<div className="chrome-lightning__vignette" /></div>;
   const scene = [
     <Silk color="#c6bbae" sheenColor="#ffffff" lightMode speed={2.1} scale={1.15} noiseIntensity={0.7} sheen={0.7} depth={0.65} glow={0.18} wave={0.65} ripple={0.4} dpr={dpr} paused={reduced} />,
     <Lightning color="#c7d5ef" bolts={2} spread={0.5} branches={0.55} glow={0.85} intensity={1.15} speed={0.85} flicker={0.45} dpr={dpr} paused={reduced} />,
-    <Waves lineColor="#d7dce2" accentColor="#7d8f9f" backgroundColor="#0b0d11" spacing={mobile ? 17 : 13} lineWidth={1.1} amplitude={26} speed={0.65} twist={0.7} dpr={dpr} paused={reduced} />,
-    <MetallicPaint text="STUDIO" color="#dce2e2" backgroundColor="#0c1015" density={mobile ? 1.1 : 1.7} scale={mobile ? 0.85 : 1.05} speed={0.6} dpr={dpr} paused={reduced} />,
-    <Iridescence color={[0.82,0.78,0.72]} speed={0.55} amplitude={0.08} detail={mobile ? 5 : 8} scale={1.1} resolution={mobile ? 0.65 : 1} brightness={1.2} />,
-    <Ballpit count={mobile ? 32 : 75} colors={['#e8e7e3','#9fa7b0','#747b83']} material="metal" minSize={0.35} maxSize={0.8} drift={0.2} dpr={dpr} />,
-    <MagnetLines spacing={mobile ? 38 : 32} lineColor="#d3d8dc" accentColor="#a5b4c1" lineWidth={1.5} lineHeight={18} radius={160} maxDevicePixelRatio={dpr} />,
-    <div className="original-demo"><p>Liquid Distortion · оригинальный Codrops</p><a href="https://tympanus.net/Development/LiquidDistortion/" target="_blank" rel="noreferrer">Открыть оригинальную интерактивную демонстрацию ↗</a><small>Этот проект использует отдельный PixiJS-движок и пока не встроен в Hero.</small></div>,
-    <div className="chrome-lightning" aria-label="Хромированная надпись с молниями"><div className="chrome-lightning__bolts"><IntermittentLightning mobile={mobile} dpr={dpr} reduced={reduced} /></div><div className="chrome-lightning__metal"><MetallicPaint text="STUDIO" color="#dce7ef" backgroundColor="#000000" density={mobile ? 0.85 : 1.5} distortion={0.045} dispersion={0.2} scale={mobile ? 0.95 : 0.8} speed={0.48} dpr={mobile ? 0.8 : dpr} paused={reduced} /></div><div className="chrome-lightning__vignette" /></div>
+    chromeScene(<IntermittentLightning mobile={mobile} dpr={dpr} reduced={reduced} />),
+    chromeScene(<LightRays raysOrigin="top-center" raysColor="#b4cce3" raysSpeed={0.28} lightSpread={0.72} rayDensity={0.65} glow={0.38} intensity={0.65} followMouse={!mobile} maxDevicePixelRatio={mobile ? 0.65 : 1} />),
+    chromeScene(<DarkVeil color="#64788b" speed={0.22} glow={0.24} sheen={0.2} quality={mobile ? 0.3 : 0.5} dpr={mobile ? 0.6 : 1} paused={reduced} />),
+    chromeScene(<FloatingLines linesGradient={['#657a90','#d6e0e9']} lineCount={mobile ? 3 : 5} lineWidth={0.8} animationSpeed={0.4} glow={0.35} amplitude={0.6} interactive={!mobile} dpr={mobile ? 0.65 : 1} />),
+    chromeScene(<SideRays rayColor1="#b5c5d5" rayColor2="#758da7" origin="top-right" speed={0.5} intensity={0.7} density={3} glow={0.4} followMouse={!mobile} maxDevicePixelRatio={mobile ? 0.65 : 1} />),
+    chromeScene(<LiquidChrome color="#778594" speed={0.12} amplitude={0.14} detail={mobile ? 2 : 3} roughness={0.65} exposure={0.5} interactive={!mobile} maxDevicePixelRatio={mobile ? 0.55 : 0.9} />)
   ][index];
   return (
     <main className={theme}>
       <header><strong>STUDIO / 001</strong><span>DIGITAL · DESIGN · AI</span></header>
       <nav aria-label="Выбор оформления">{variants.map((v, i) => <button key={v.name} type="button" className={index === i ? 'active' : ''} aria-pressed={index === i} onClick={() => setIndex(i)}><span className="number">0{i + 1}</span><span>{v.name}</span><small>{v.label}</small></button>)}</nav>
-      <section className={`hero${index === 8 ? " hero--chrome" : ""}`}>
+      <section className={`hero${index >= 2 ? " hero--chrome" : ""}`}>
         <div className="scene" key={index}><Suspense fallback={<div className="loading">Загрузка эффекта…</div>}>{scene}</Suspense></div>
-        {index !== 8 && <div className="overlay">
+        {index < 2 && <div className="overlay">
           <p className="eyebrow">INDEPENDENT DIGITAL STUDIO</p>
           <h1>Beyond<br/><em>the ordinary.</em></h1>
           <p className="subtitle">Создаём цифровые продукты, которые работают, впечатляют и открывают новые возможности.</p>
-          <div className="footerline"><span>ORIGINAL REACT BITS</span><span>{variants[index].name.toUpperCase()} · 0{index + 1} / 09</span></div>
+          <div className="footerline"><span>ORIGINAL REACT BITS</span><span>{variants[index].name.toUpperCase()} · 0{index + 1} / 08</span></div>
         </div>}
       </section>
       <footer><span>React Bits + Codrops · мобильная подборка</span><a href="https://github.com/DavidHDev/react-bits" target="_blank" rel="noreferrer">SOURCE · GITHUB ↗</a></footer>
