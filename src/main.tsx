@@ -120,7 +120,7 @@ function App(){
  const price=(type==='site'?35000:type==='app'?110000:65000)+Math.max(0,pages-1)*2500+(ai?30000:0);
  const regions=[['gallery','tl'],['works','tr'],['calc','bl'],['contact','br']];
  return <main><section className={'screen phase-'+phase}>
- <Matrix section={section} phase={phase}/>
+ <MatrixScene phase={phase} target={target}/>
  {phase==='home'&&<><h1 className="sr-only">CODE_MUM — цифровая студия</h1>{regions.map(([id,pos])=><button key={id} className={'hotspot '+pos} onClick={()=>enter(id)} aria-label={'Открыть '+SECTIONS.find(s=>s.id===id).label}><span className="sr-only">{SECTIONS.find(s=>s.id===id).label}</span></button>)}<div className="home-hint">ВЫБЕРИТЕ РАЗДЕЛ — ВОЙДИТЕ В КОД</div></>}
  {phase==='enter'&&<div className="warp" key="enter"><div className="warp-vortex"/><div className="warp-label">ВХОД В МИР / {SECTIONS.find(s=>s.id===pending)?.label}</div></div>}
  {section&&<div className={'world '+(phase==='exit'?'world-out':'world-in')}>
