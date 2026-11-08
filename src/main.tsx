@@ -27,10 +27,11 @@ function App() {
             <div className="chrome-layer chrome-layer--background">
               <LiquidChrome color="#778594" speed={0.12} amplitude={0.14} detail={mobile ? 2 : 3} roughness={0.65} exposure={0.5} interactive={true} rippleStrength={1.35} rippleSize={mobile ? 1.3 : 1.1} tilt={1.15} maxDevicePixelRatio={mobile ? 0.55 : 0.9} />
             </div>
-            <div className="chrome-layer chrome-layer--text">
-              <MetallicPaint text="CODE_MUM" color="#dce7ef" backgroundColor="#000000" density={mobile ? 0.85 : 1.5} distortion={0.045} dispersion={0.2} scale={mobile ? 0.95 : 0.8} speed={0.48} dpr={mobile ? 0.8 : dpr} paused={reduced} />
+            <div className="chrome-layer chrome-layer--text chrome-layer--desktop">
+              <MetallicPaint text="CODE_MUM" color="#dce7ef" backgroundColor="#000000" density={mobile ? 0.85 : 1.5} distortion={0.045} dispersion={0.2} scale={0.7} speed={0.48} dpr={mobile ? 0.8 : dpr} paused={reduced} />
             </div>
             <div className="chrome-lightning__vignette" />
+            <div className="hero-content"><div className="hero-eyebrow">INDEPENDENT DIGITAL STUDIO <span>— EST. 2026</span></div><h1 className="hero-title">CODE<span className="hero-underscore">_</span>MUM</h1><p className="hero-subtitle">Создаём цифровое, что работает.</p><div className="hero-services"><span>САЙТЫ</span><i /> <span>ПРИЛОЖЕНИЯ</span><i /> <span>ИИ-РЕШЕНИЯ</span></div></div>
           </div>
         </Suspense>
       </div>
