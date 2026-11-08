@@ -34,19 +34,9 @@ function MatrixScene({phase,target}){
    const mask=document.createElement('canvas');mask.width=Math.ceil(w);mask.height=Math.ceil(h);
    const m=mask.getContext('2d',{willReadFrequently:true});
    m.clearRect(0,0,w,h);m.fillStyle='#fff';m.textBaseline='middle';m.textAlign='center';
-   const logoY=mobile?h*.59:h*.51;
-   const logoFont=mobile?Math.min(57,w*.15):Math.min(132,w*.115);
+   const logoFont=Math.min(w<700?64:138,w*.135);
    m.font='900 '+logoFont+'px Arial,Helvetica,sans-serif';
-   m.fillText('CODE_MUM',w*.5,logoY,w*.94);
-   const labels=mobile?[
-    ['ГАЛЕРЕЯ',w*.77,h*.105],['РАБОТЫ',w*.77,h*.177],
-    ['КАЛЬКУЛЯТОР',w*.77,h*.249],['КОНТАКТЫ',w*.77,h*.321]
-   ]:[
-    ['ГАЛЕРЕЯ',w*.16,h*.095],['РАБОТЫ',w*.39,h*.095],
-    ['КАЛЬКУЛЯТОР',w*.62,h*.095],['КОНТАКТЫ',w*.85,h*.095]
-   ];
-   m.font='900 '+(mobile?Math.min(34,w*.086):Math.min(39,w*.031))+'px Arial,Helvetica,sans-serif';
-   for(const [label,x,y] of labels)m.fillText(label,x,y,mobile?w*.43:w*.22);
+   m.fillText('CODE_MUM',w*.5,h*.49,w*.94);
    const pixels=m.getImageData(0,0,mask.width,mask.height).data;
    for(let y=0;y<rows;y++)for(let x=0;x<columns;x++){
     const px=Math.min(mask.width-1,Math.floor((x+.5)*step)),py=Math.min(mask.height-1,Math.floor((y+.5)*step));
@@ -89,8 +79,8 @@ function MatrixScene({phase,target}){
     if(px<-step*perspective||px>w+step*perspective||py<-step*perspective||py>h+step*perspective)continue;
     const size=clamp((shaped?step*.96:step*.85)*perspective,5,180);
     ctx.font='bold '+size+'px monospace';
-    const reveal=clamp((ticks-10)/55,0,1);
-    const opacity=shaped?(.83+.15*Math.sin(ticks*.06+point.seed))*reveal:falling?.015+.13*(1-trail/stream.length):0;
+    const reveal=clamp((ticks-4)/32,0,1);
+    const opacity=shaped?(.94+.05*Math.sin(ticks*.06+point.seed))*reveal:falling?.008+.095*(1-trail/stream.length):0;
     ctx.fillStyle=shaped?'rgba(174,255,195,'+opacity+')':trail<1?'rgba(85,190,117,.32)':'rgba(38,145,76,'+opacity+')';
     const symbol=CHARS[(x*13+y*7+Math.floor(ticks/(shaped?12:5)))%CHARS.length];
     ctx.fillText(symbol,px,py);
@@ -120,17 +110,16 @@ function App(){
  const timers=useRef([]);
  const schedule=(fn,ms)=>{const id=window.setTimeout(fn,ms);timers.current.push(id)};
  useEffect(()=>()=>timers.current.forEach(clearTimeout),[]);
- function enter(id){if(phase!=='home')return;const mobile=window.innerWidth<700;const coords=mobile?{gallery:[77,10.5],works:[77,17.7],calc:[77,24.9],contact:[77,32.1]}:{gallery:[16,9.5],works:[39,9.5],calc:[62,9.5],contact:[85,9.5]};const [x,y]=coords[id];setTarget({x,y});setPending(id);setPhase('enter');schedule(()=>{setSection(id);setPhase('world');setPending(null)},2100)}
+ function enter(){if(phase!=='home')return;setTarget({x:50,y:50});setPending('works');setPhase('enter');schedule(()=>{setSection('works');setPhase('world');setPending(null)},2100)}
  function exit(){if(phase!=='world')return;setPhase('exit');schedule(()=>{setSection(null);setPhase('home')},1350)}
  const selected=SECTIONS.find(s=>s.id===section);
  const price=(type==='site'?35000:type==='app'?110000:65000)+Math.max(0,pages-1)*2500+(ai?30000:0);
- const regions=[['gallery','tl'],['works','tr'],['calc','bl'],['contact','br']];
  return <main><section className={'screen phase-'+phase}>
  <MatrixScene phase={phase} target={target}/>
- {phase==='home'&&<><h1 className="sr-only">CODE_MUM — цифровая студия</h1>{regions.map(([id,pos])=><button key={id} className={'hotspot nav-'+id} onClick={()=>enter(id)} aria-label={'Открыть '+SECTIONS.find(s=>s.id===id).label}><span className="sr-only">{SECTIONS.find(s=>s.id===id).label}</span></button>)}<div className="home-hint">ВЫБЕРИТЕ РАЗДЕЛ — ВОЙДИТЕ В КОД</div></>}
+ {phase==='home'&&<><h1 className="sr-only">CODE_MUM — цифровая студия</h1><button className="entry-button" onClick={enter} aria-label="Войти на сайт">ВХОД <span aria-hidden="true">↗</span></button></>}
  {phase==='enter'&&<div className="warp" key="enter"><div className="warp-vortex"/><div className="warp-label">ВХОД В МИР / {SECTIONS.find(s=>s.id===pending)?.label}</div></div>}
  {section&&<div className={'world '+(phase==='exit'?'world-out':'world-in')}>
-  <div className="world-bar"><button className="back" onClick={exit} disabled={phase!=='world'}>← В МАТРИЦУ</button><span>CODE_MUM / {selected?.label}</span></div>
+  <div className="world-bar"><button className="back" onClick={exit} disabled={phase!=='world'}>← НА ГЛАВНУЮ</button><nav className="world-navigation" aria-label="Разделы сайта">{SECTIONS.map(s=><button key={s.id} className={section===s.id?'active':''} onClick={()=>{if(phase==='world')setSection(s.id)}}>{s.label}</button>)}</nav><span className="world-brand">CODE_MUM</span></div>
   <div className="world-scene"><div className="world-grid"/><div className="world-inner">
    <div className="world-index">МИР 0{SECTIONS.findIndex(s=>s.id===section)+1} / 04 <span className="pulse">● СИСТЕМА АКТИВНА</span></div>
    <h2>{selected?.sub}</h2><p className="world-desc">{selected?.description}</p>
