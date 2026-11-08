@@ -25,25 +25,16 @@ function MatrixScene({phase,target}){
    const dpr=Math.min(devicePixelRatio||1,1.6,Math.sqrt(1600000/Math.max(w*h,1)));
    canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
    // One shared grid for background, central logo AND all four menu labels.
-   step=w<480?7:w<850?9:12;columns=Math.ceil(w/step);rows=Math.ceil(h/step);
+   step=w<480?10:w<850?11:13;columns=Math.ceil(w/step);rows=Math.ceil(h/step);
    streams=Array.from({length:columns},(_,x)=>({x,head:rand(-rows,rows),speed:rand(.22,.65),length:Math.floor(rand(9,26))}));
    grid=Array.from({length:rows*columns},(_,i)=>({glyph:pick(),seed:rand(0,7),z:rand(-.22,.22)}));
    glyphMasks=new Uint8Array(rows*columns);
    const mask=document.createElement('canvas');mask.width=columns;mask.height=rows;
    const m=mask.getContext('2d');m.fillStyle='white';m.textBaseline='middle';m.textAlign='center';
    // Grid units: text is sampled at exactly the same cells as the rain.
-   const logoFont=Math.min(rows*.17,columns*.205);
+   const logoFont=Math.min(rows*.17,columns*.195);
    m.font='900 '+logoFont+'px Arial,sans-serif';
    m.fillText('CODE_MUM',columns/2,rows*.47,columns*.96);
-   const labels=[
-    {text:'ГАЛЕРЕЯ',x:columns*.04,y:rows*.13,align:'left'},
-    {text:'РАБОТЫ',x:columns*.96,y:rows*.13,align:'right'},
-    {text:'КАЛЬКУЛЯТОР',x:columns*.04,y:rows*.86,align:'left'},
-    {text:'КОНТАКТЫ',x:columns*.96,y:rows*.86,align:'right'}
-   ];
-   // On mobile: 6-8 grid rows per letter height, not separate small glyphs.
-   const labelFont=Math.max(5,Math.min(8.5,rows*.09));
-   for(const label of labels){m.textAlign=label.align;m.font='900 '+labelFont+'px Arial,sans-serif';m.fillText(label.text,label.x,label.y,columns*.44)}
    const rgba=m.getImageData(0,0,columns,rows).data;
    for(let i=0;i<glyphMasks.length;i++)glyphMasks[i]=rgba[i*4+3]>95?1:0;
    stars=Array.from({length:260},()=>({x:rand(0,w),y:rand(0,h),z:rand(.1,1),brightness:rand(.1,.6)}));
@@ -75,16 +66,18 @@ function MatrixScene({phase,target}){
     const idx=y*columns+x,point=grid[idx],stream=streams[x],trail=stream.head-y;
     const falling=trail>=0&&trail<stream.length;
     const shaped=glyphMasks[idx]===1;
+    const inLogoZone=Math.abs(x-columns*.5)<columns*.49&&Math.abs(y-rows*.47)<Math.min(rows*.12,columns*.14);
+    if(inLogoZone&&!shaped&&depth<.08)continue;
     if(!falling&&!shaped)continue;
     const sx=x*step+step*.5,sy=y*step+step*.5;
     const perspective=cameraScale*(1+point.z*depth*.22);
     const px=focusX+(sx-focusX)*perspective;
     const py=focusY+(sy-focusY)*perspective;
     if(px<-step*perspective||px>w+step*perspective||py<-step*perspective||py>h+step*perspective)continue;
-    const size=clamp((step-1)*perspective,6,180);
+    const size=clamp((shaped?step*1.25:step*.88)*perspective,6,180);
     ctx.font='bold '+size+'px monospace';
     const reveal=clamp((ticks-10)/55,0,1);
-    const opacity=shaped?(.76+.19*Math.sin(ticks*.045+point.seed))*reveal:falling?.07+.5*(1-trail/stream.length):0;
+    const opacity=shaped?(.9+.08*Math.sin(ticks*.045+point.seed))*reveal:falling?.025+.24*(1-trail/stream.length):0;
     ctx.fillStyle=shaped?'rgba(174,255,195,'+opacity+')':trail<1?'rgba(207,255,218,.92)':'rgba(38,211,101,'+opacity+')';
     const symbol=CHARS[(x*13+y*7+Math.floor(ticks/(shaped?12:5)))%CHARS.length];
     ctx.fillText(symbol,px,py);
@@ -121,7 +114,7 @@ function App(){
  const regions=[['gallery','tl'],['works','tr'],['calc','bl'],['contact','br']];
  return <main><section className={'screen phase-'+phase}>
  <MatrixScene phase={phase} target={target}/>
- {phase==='home'&&<><h1 className="sr-only">CODE_MUM — цифровая студия</h1>{regions.map(([id,pos])=><button key={id} className={'hotspot '+pos} onClick={()=>enter(id)} aria-label={'Открыть '+SECTIONS.find(s=>s.id===id).label}><span className="sr-only">{SECTIONS.find(s=>s.id===id).label}</span></button>)}<div className="home-hint">ВЫБЕРИТЕ РАЗДЕЛ — ВОЙДИТЕ В КОД</div></>}
+ {phase==='home'&&<><h1 className="sr-only">CODE_MUM — цифровая студия</h1>{regions.map(([id,pos])=><button key={id} className={'hotspot '+pos} onClick={()=>enter(id)} aria-label={'Открыть '+SECTIONS.find(s=>s.id===id).label}><span className="menu-label">{SECTIONS.find(s=>s.id===id).label}</span></button>)}<div className="home-hint">ВЫБЕРИТЕ РАЗДЕЛ — ВОЙДИТЕ В КОД</div></>}
  {phase==='enter'&&<div className="warp" key="enter"><div className="warp-vortex"/><div className="warp-label">ВХОД В МИР / {SECTIONS.find(s=>s.id===pending)?.label}</div></div>}
  {section&&<div className={'world '+(phase==='exit'?'world-out':'world-in')}>
   <div className="world-bar"><button className="back" onClick={exit} disabled={phase!=='world'}>← В МАТРИЦУ</button><span>CODE_MUM / {selected?.label}</span></div>
