@@ -1,123 +1,110 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import './style.css';
-
 const SECTIONS=[
  {id:'gallery',label:'ГАЛЕРЕЯ',sub:'ЦИФРОВАЯ ГАЛЕРЕЯ',description:'Визуальные эксперименты и интерфейсы',items:['Интерактивные миры','Цифровая типографика','Генеративная графика']},
  {id:'works',label:'РАБОТЫ',sub:'ПРОЕКТЫ И РЕШЕНИЯ',description:'Веб-сайты, приложения и AI-инструменты',items:['Веб-разработка','Мобильные приложения','ИИ-решения']},
  {id:'calc',label:'КАЛЬКУЛЯТОР',sub:'ОЦЕНКА ПРОЕКТА',description:'Соберите конфигурацию вашего проекта',items:[]},
  {id:'contact',label:'КОНТАКТЫ',sub:'НАЧНЁМ СОЗДАВАТЬ',description:'Расскажите, какой мир хотите построить',items:[]}
 ];
-const GLYPHS='01アイウエオカキクケコサシスセソタチツテト<>/{}[]';
-function Matrix({section,phase,onNavigate}){
- const ref=useRef(null);
+const CHARS='01アイウエオカキクケコサシスセソタチツテト<>/{}[]';
+const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
+const ease=t=>t*t*(3-2*t);
+function MatrixScene({phase,target}){
+ const canvasRef=useRef(null);
+ const stateRef=useRef({phase,target});
+ stateRef.current={phase,target};
  useEffect(()=>{
-  const canvas=ref.current,ctx=canvas.getContext('2d',{alpha:false});if(!ctx)return;
-  let w=0,h=0,cell=12,dpr=1,cols=[],masks=[],menuGlyphs=[],frame=0,raf=0,last=0,alive=true;
-  const pointer={x:-1000,y:-1000};
-  const rnd=(a,b)=>a+Math.random()*(b-a);
-  const pick=()=>GLYPHS[Math.floor(Math.random()*GLYPHS.length)];
-  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const canvas=canvasRef.current,ctx=canvas.getContext('2d',{alpha:false});if(!ctx)return;
+  let w=0,h=0,step=8,rows=0,columns=0,grid=[],streams=[],glyphMasks=[],stars=[],raf=0,alive=true,last=0;
+  let progress=0,previousPhase='home',ticks=0;
+  const rand=(a,b)=>a+Math.random()*(b-a);
+  const pick=()=>CHARS[Math.floor(Math.random()*CHARS.length)];
   function resize(){
    const rect=canvas.getBoundingClientRect();w=rect.width;h=rect.height;
-   dpr=Math.min(devicePixelRatio||1,1.6,Math.sqrt(1600000/Math.max(1,w*h)));
+   const dpr=Math.min(devicePixelRatio||1,1.6,Math.sqrt(1600000/Math.max(w*h,1)));
    canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
-   cell=w<650?Math.max(7,Math.floor(w/55)):13;
-   const nx=Math.ceil(w/cell),ny=Math.ceil(h/cell);
-   cols=Array.from({length:nx},(_,x)=>({x,head:rnd(-ny,ny),speed:rnd(.13,.48),length:Math.floor(rnd(8,24)),offset:rnd(0,100)}));
-   masks=Array.from({length:ny},()=>new Uint8Array(nx));
-   if(section!==null)return;
-   const off=document.createElement('canvas');off.width=nx;off.height=ny;const c=off.getContext('2d');c.fillStyle='#fff';c.textAlign='center';c.textBaseline='middle';
-   const logoSize=Math.min(ny*.22,nx*.205);
-   c.font='900 '+logoSize+'px Arial,sans-serif';
-   c.fillText('CODE_MUM',nx/2,ny*.47,nx*.94);
-   // The menu has its own finer sampling resolution but shares the exact screen coordinates and glyph renderer.
-   // Each Cyrillic letter is sampled at >= 6 pixels of height instead of being crushed into 2-3 grid rows.
-   menuGlyphs=[];
-   const menuFont=Math.max(17,Math.min(28,w*.046));
-   const fine=Math.max(2.4,menuFont/10);
+   // One shared grid for background, central logo AND all four menu labels.
+   step=w<480?7:w<850?9:12;columns=Math.ceil(w/step);rows=Math.ceil(h/step);
+   streams=Array.from({length:columns},(_,x)=>({x,head:rand(-rows,rows),speed:rand(.22,.65),length:Math.floor(rand(9,26))}));
+   grid=Array.from({length:rows*columns},(_,i)=>({glyph:pick(),seed:rand(0,7),z:rand(-.22,.22)}));
+   glyphMasks=new Uint8Array(rows*columns);
+   const mask=document.createElement('canvas');mask.width=columns;mask.height=rows;
+   const m=mask.getContext('2d');m.fillStyle='white';m.textBaseline='middle';m.textAlign='center';
+   // Grid units: text is sampled at exactly the same cells as the rain.
+   const logoFont=Math.min(rows*.17,columns*.205);
+   m.font='900 '+logoFont+'px Arial,sans-serif';
+   m.fillText('CODE_MUM',columns/2,rows*.47,columns*.96);
    const labels=[
-    {text:'ГАЛЕРЕЯ',anchor:'left',x:w*.045,y:h*.135},
-    {text:'РАБОТЫ',anchor:'right',x:w*.955,y:h*.135},
-    {text:'КАЛЬКУЛЯТОР',anchor:'left',x:w*.045,y:h*.865},
-    {text:'КОНТАККТЫ',anchor:'right',x:w*.955,y:h*.865}
+    {text:'ГАЛЕРЕЯ',x:columns*.04,y:rows*.13,align:'left'},
+    {text:'РАБОТЫ',x:columns*.96,y:rows*.13,align:'right'},
+    {text:'КАЛЬКУЛЯТОР',x:columns*.04,y:rows*.86,align:'left'},
+    {text:'КОНТАКТЫ',x:columns*.96,y:rows*.86,align:'right'}
    ];
-   labels[3].text='КОНТАКТЫ';
-   for(const item of labels){
-    const mask=document.createElement('canvas');
-    const mc=mask.getContext('2d');
-    mc.font='900 '+menuFont+'px Arial,Helvetica,sans-serif';
-    const maxWidth=w*.44;
-    const measured=mc.measureText(item.text).width;
-    const font=Math.min(menuFont,menuFont*maxWidth/Math.max(measured,1));
-    const mw=Math.ceil(maxWidth/fine),mh=Math.ceil(font*1.5/fine);
-    mask.width=mw;mask.height=mh;
-    mc.fillStyle='#fff';mc.textAlign=item.anchor;mc.textBaseline='middle';
-    mc.font='900 '+font/fine+'px Arial,Helvetica,sans-serif';
-    mc.fillText(item.text,item.anchor==='left'?0:mw,mh/2,mw);
-    const pixels=mc.getImageData(0,0,mw,mh).data;
-    const x0=item.anchor==='left'?item.x:item.x-mw*fine;
-    const y0=item.y-mh*fine/2;
-    for(let yy=0;yy<mh;yy++)for(let xx=0;xx<mw;xx++){
-     if(pixels[(yy*mw+xx)*4+3]>105)menuGlyphs.push({x:x0+xx*fine,y:y0+yy*fine,seed:(xx*13+yy*7)%GLYPHS.length,size:fine});
-    }
-   }
-   const pix=c.getImageData(0,0,nx,ny).data;
-   for(let y=0;y<ny;y++)for(let x=0;x<nx;x++)if(pix[(y*nx+x)*4+3]>85)masks[y][x]=1;
+   // On mobile: 6-8 grid rows per letter height, not separate small glyphs.
+   const labelFont=Math.max(5,Math.min(8.5,rows*.09));
+   for(const label of labels){m.textAlign=label.align;m.font='900 '+labelFont+'px Arial,sans-serif';m.fillText(label.text,label.x,label.y,columns*.44)}
+   const rgba=m.getImageData(0,0,columns,rows).data;
+   for(let i=0;i<glyphMasks.length;i++)glyphMasks[i]=rgba[i*4+3]>95?1:0;
+   stars=Array.from({length:260},()=>({x:rand(0,w),y:rand(0,h),z:rand(.1,1),brightness:rand(.1,.6)}));
   }
-  const ro=new ResizeObserver(resize);ro.observe(canvas);resize();
-  function render(time){
-   if(!alive)return;
-   if(time-last<30){raf=requestAnimationFrame(render);return}last=time;frame++;
+  const observer=new ResizeObserver(resize);observer.observe(canvas);resize();
+  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function draw(now){
+   if(!alive)return;raf=requestAnimationFrame(draw);
+   if(now-last<28)return;
+   const dt=Math.min(60,now-last||33);last=now;ticks++;
+   const {phase,target}=stateRef.current;
+   if(phase!==previousPhase){progress=0;previousPhase=phase}
+   if(phase==='enter')progress=clamp(progress+dt/2100,0,1);
+   else if(phase==='exit')progress=clamp(progress+dt/1350,0,1);
+   const depth=phase==='enter'?ease(progress):phase==='world'?1:phase==='exit'?1-ease(progress):0;
    ctx.fillStyle='#010703';ctx.fillRect(0,0,w,h);
-   const halo=ctx.createRadialGradient(w/2,h*.46,0,w/2,h*.46,w*.8);halo.addColorStop(0,'#0c2618');halo.addColorStop(1,'#010703');ctx.fillStyle=halo;ctx.fillRect(0,0,w,h);
-   const nx=cols.length,ny=masks.length;
-   ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold '+Math.max(8,cell-1)+'px monospace';
-   const forming=Math.min(1,Math.max(0,(frame-8)/65));
-   for(const col of cols){
-    col.head+=col.speed*(reduce?0:1);
-    if(col.head-col.length>ny)col.head=rnd(-ny,0);
-    const x=col.x*cell+cell/2;
-    for(let y=0;y<ny;y++){
-     const py=y*cell+cell/2;
-     const inShape=section===null&&masks[y]?.[col.x]===1;
-     const delta=col.head-y;
-     const falling=delta>=0&&delta<col.length;
-     if(!falling&&!inShape)continue;
-     const distance=Math.hypot(x-pointer.x,py-pointer.y);
-     const near=Math.max(0,1-distance/100);
-     let alpha=falling?.12+.52*(1-delta/col.length):0;
-     if(inShape)alpha=Math.max(alpha,forming*(.77+.2*Math.sin(frame*.035+col.x*.4+y*.3)));
-     ctx.fillStyle=inShape?'rgba(171,255,193,'+Math.min(1,alpha)+')':falling&&delta<1?'rgba(205,255,222,.9)':'rgba(36,215,108,'+Math.min(1,alpha+near*.24)+')';
-     if(inShape){ctx.shadowBlur=3;ctx.shadowColor='#42f68d'}
-     ctx.fillText(GLYPHS[(col.x*13+y*7+Math.floor(frame/(inShape?9:5)))%GLYPHS.length],x,py);
-     ctx.shadowBlur=0;
+   const glow=ctx.createRadialGradient(w*.5,h*.48,0,w*.5,h*.48,Math.max(w,h)*.8);
+   glow.addColorStop(0,'#0b2616');glow.addColorStop(1,'#010703');ctx.fillStyle=glow;ctx.fillRect(0,0,w,h);
+   const focusX=w*target.x/100,focusY=h*target.y/100;
+   // Project every glyph through the SAME perspective camera toward the clicked menu's screen coordinate.
+   // z is the depth of the digital-rain plane; perspective scale accelerates near the target.
+   const cameraScale=1+depth*28;
+   ctx.textAlign='center';ctx.textBaseline='middle';
+   for(const stream of streams){
+    if(!reduced)stream.head+=stream.speed*(dt/33);
+    if(stream.head-stream.length>rows)stream.head=-rand(4,rows*.7);
+   }
+   for(let y=0;y<rows;y++)for(let x=0;x<columns;x++){
+    const idx=y*columns+x,point=grid[idx],stream=streams[x],trail=stream.head-y;
+    const falling=trail>=0&&trail<stream.length;
+    const shaped=glyphMasks[idx]===1;
+    if(!falling&&!shaped)continue;
+    const sx=x*step+step*.5,sy=y*step+step*.5;
+    const perspective=cameraScale*(1+point.z*depth*.22);
+    const px=focusX+(sx-focusX)*perspective;
+    const py=focusY+(sy-focusY)*perspective;
+    if(px<-step*perspective||px>w+step*perspective||py<-step*perspective||py>h+step*perspective)continue;
+    const size=clamp((step-1)*perspective,6,180);
+    ctx.font='bold '+size+'px monospace';
+    const reveal=clamp((ticks-10)/55,0,1);
+    const opacity=shaped?(.76+.19*Math.sin(ticks*.045+point.seed))*reveal:falling?.07+.5*(1-trail/stream.length):0;
+    ctx.fillStyle=shaped?'rgba(174,255,195,'+opacity+')':trail<1?'rgba(207,255,218,.92)':'rgba(38,211,101,'+opacity+')';
+    const symbol=CHARS[(x*13+y*7+Math.floor(ticks/(shaped?12:5)))%CHARS.length];
+    ctx.fillText(symbol,px,py);
+   }
+   if(depth>.04){
+    // Near-field particles supply parallax and motion streaks, instead of flat CSS zoom.
+    for(const p of stars){
+     const z=clamp(p.z+depth*1.6,.1,2.6),factor=1+depth*depth*18/z;
+     const x=focusX+(p.x-focusX)*factor,y=focusY+(p.y-focusY)*factor;
+     if(x<0||x>w||y<0||y>h)continue;
+     ctx.strokeStyle='rgba(112,255,166,'+(depth*p.brightness)+')';
+     ctx.lineWidth=clamp(depth*factor*.6,.5,3);
+     ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+(x-focusX)*depth*.06,y+(y-focusY)*depth*.06);ctx.stroke();
     }
    }
-   if(section===null){
-    // Glyphs for menu and logo belong to one animated canvas, not HTML text overlays.
-    ctx.font='bold '+Math.max(3,menuGlyphs[0]?.size||3)+'px monospace';
-    for(const g of menuGlyphs){
-     const light=.74+.22*Math.sin(frame*.05+g.seed);
-     ctx.fillStyle='rgba(175,255,199,'+(forming*light)+')';
-     ctx.fillText(GLYPHS[(g.seed+Math.floor(frame/9))%GLYPHS.length],g.x,g.y);
-    }
-   }
-   if(phase!=='home'){
-    const cx=w/2,cy=h/2;
-    const strength=phase==='enter'?Math.min(1,frame/38):phase==='exit'?Math.min(1,frame/35):.25;
-    ctx.save();ctx.translate(cx,cy);
-    for(let i=0;i<50;i++){const a=i*2.39996+frame*.006,r=(i/50)*Math.max(w,h)*strength;ctx.strokeStyle='rgba(90,255,160,'+(1-i/50)*.3+')';ctx.beginPath();ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r);ctx.lineTo(Math.cos(a)*(r+30*strength),Math.sin(a)*(r+30*strength));ctx.stroke()}
-    ctx.restore();
-   }
-   raf=requestAnimationFrame(render);
   }
-  raf=requestAnimationFrame(render);
-  const move=e=>{const r=canvas.getBoundingClientRect();pointer.x=e.clientX-r.left;pointer.y=e.clientY-r.top};
-  canvas.addEventListener('pointermove',move);
-  return()=>{alive=false;cancelAnimationFrame(raf);ro.disconnect();canvas.removeEventListener('pointermove',move)};
- },[section,phase]);
- return <canvas ref={ref} className="matrix" aria-hidden="true"/>;
+  raf=requestAnimationFrame(draw);
+  return()=>{alive=false;cancelAnimationFrame(raf);observer.disconnect()};
+ },[]);
+ return <canvas className="matrix" ref={canvasRef} aria-hidden="true"/>;
 }
 function App(){
  const [section,setSection]=useState(null),[phase,setPhase]=useState('home'),[pending,setPending]=useState(null);
@@ -127,8 +114,8 @@ function App(){
  const timers=useRef([]);
  const schedule=(fn,ms)=>{const id=window.setTimeout(fn,ms);timers.current.push(id)};
  useEffect(()=>()=>timers.current.forEach(clearTimeout),[]);
- function enter(id){if(phase!=='home')return;const coords={gallery:[18,13.5],works:[82,13.5],calc:[18,86.5],contact:[82,86.5]};const [x,y]=coords[id];setTarget({x,y});setPending(id);setPhase('enter');schedule(()=>{setSection(id);setPhase('world');setPending(null)},1750)}
- function exit(){if(phase!=='world')return;setPhase('exit');schedule(()=>{setSection(null);setPhase('home')},1250)}
+ function enter(id){if(phase!=='home')return;const coords={gallery:[18,13.5],works:[82,13.5],calc:[18,86.5],contact:[82,86.5]};const [x,y]=coords[id];setTarget({x,y});setPending(id);setPhase('enter');schedule(()=>{setSection(id);setPhase('world');setPending(null)},2100)}
+ function exit(){if(phase!=='world')return;setPhase('exit');schedule(()=>{setSection(null);setPhase('home')},1350)}
  const selected=SECTIONS.find(s=>s.id===section);
  const price=(type==='site'?35000:type==='app'?110000:65000)+Math.max(0,pages-1)*2500+(ai?30000:0);
  const regions=[['gallery','tl'],['works','tr'],['calc','bl'],['contact','br']];
