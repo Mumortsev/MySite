@@ -83,7 +83,7 @@ function App() {
       <div className="porcelain-halo" />
       <div className="porcelain-sculpture porcelain-sculpture--one" />
       <div className="porcelain-sculpture porcelain-sculpture--two" />
-      <div className="porcelain-paint"><MetallicPaint text="STUDIO" color="#c6b9a9" backgroundColor="transparent" lightMode density={mobile ? 1 : 1.8} softness={0.3} dispersion={0.08} distortion={0.085} edgeBend={0.22} speed={0.65} scale={mobile ? 0.94 : 0.83} dpr={mobile ? 0.85 : dpr} paused={reduced} /></div>
+      <div className="porcelain-soft-word" aria-label="STUDIO"><span>STUDIO</span></div>
       <div className="porcelain-floor" />
     </div>
   ][index];
