@@ -13,7 +13,27 @@ const variants = [
 
 function App(){
   const [index,setIndex]=useState(0);
-  useEffect(()=>{\n    if(index>=2)return;\n    let frame=0;let active=true;let lastTouch=0;\n    const mark=()=>{lastTouch=performance.now()};\n    window.addEventListener('pointerdown',mark,{passive:true});\n    window.addEventListener('touchstart',mark,{passive:true});\n    const animate=(time:number)=>{\n      if(!active)return;\n      const scene=document.querySelector('.scene');\n      if(scene && time-lastTouch>3500){\n        const rect=scene.getBoundingClientRect();\n        const x=rect.left+rect.width*(.5+.24*Math.sin(time*.00038));\n        const y=rect.top+rect.height*(.48+.27*Math.sin(time*.00053));\n        window.dispatchEvent(new PointerEvent('pointermove',{clientX:x,clientY:y}));\n      }\n      frame=requestAnimationFrame(animate);\n    };\n    frame=requestAnimationFrame(animate);\n    return()=>{active=false;cancelAnimationFrame(frame);window.removeEventListener('pointerdown',mark);window.removeEventListener('touchstart',mark)};\n  },[index]);\n  const dark=index%2===1;
+  useEffect(()=>{
+    if(index>=2)return;
+    let frame=0;let active=true;let lastTouch=0;
+    const mark=()=>{lastTouch=performance.now()};
+    window.addEventListener('pointerdown',mark,{passive:true});
+    window.addEventListener('touchstart',mark,{passive:true});
+    const animate=(time:number)=>{
+      if(!active)return;
+      const scene=document.querySelector('.scene');
+      if(scene && time-lastTouch>3500){
+        const rect=scene.getBoundingClientRect();
+        const x=rect.left+rect.width*(.5+.24*Math.sin(time*.00038));
+        const y=rect.top+rect.height*(.48+.27*Math.sin(time*.00053));
+        window.dispatchEvent(new PointerEvent('pointermove',{clientX:x,clientY:y}));
+      }
+      frame=requestAnimationFrame(animate);
+    };
+    frame=requestAnimationFrame(animate);
+    return()=>{active=false;cancelAnimationFrame(frame);window.removeEventListener('pointerdown',mark);window.removeEventListener('touchstart',mark)};
+  },[index]);
+  const dark=index%2===1;
   const beams=index>=2;
   const background=dark?'#151616':'#f0eee8';
   return <main className={dark?'dark':'light'}>
