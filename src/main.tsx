@@ -1,7 +1,7 @@
 import React,{Suspense,useEffect,useRef,useState} from 'react';
 import{createRoot}from'react-dom/client';
 import{Canvas,useFrame,useThree}from'@react-three/fiber';
-import{Environment,Float,MeshTransmissionMaterial,Stars}from'@react-three/drei';
+import{Environment,Float}from'@react-three/drei';
 import gsap from'gsap';
 import * as THREE from'three';
 import './style.css';
@@ -22,6 +22,7 @@ function Sculpture({active}:{active:boolean}){
   group.current.rotation.y=THREE.MathUtils.damp(group.current.rotation.y,active?Math.PI*1.2+pointer.x*.12:pointer.x*.17+Math.sin(t*.17)*.2,1.4,dt);
   group.current.rotation.x=THREE.MathUtils.damp(group.current.rotation.x,pointer.y*.09+Math.sin(t*.24)*.08,1.1,dt);
   knot.current.rotation.z+=dt*(active?.19:.065);
+  group.current.position.z=THREE.MathUtils.damp(group.current.position.z,active?-18:0,1.25,dt);
   const scale=active?1.8:1;
   group.current.scale.setScalar(THREE.MathUtils.damp(group.current.scale.x,scale,1.4,dt));
  });
