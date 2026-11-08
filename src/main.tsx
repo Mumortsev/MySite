@@ -13,7 +13,7 @@ function Matrix({section,phase,onNavigate}){
  const ref=useRef(null);
  useEffect(()=>{
   const canvas=ref.current,ctx=canvas.getContext('2d',{alpha:false});if(!ctx)return;
-  let w=0,h=0,cell=12,dpr=1,cols=[],masks=[],frame=0,raf=0,last=0,alive=true;
+  let w=0,h=0,cell=12,dpr=1,cols=[],masks=[],menuGlyphs=[],frame=0,raf=0,last=0,alive=true;
   const pointer={x:-1000,y:-1000};
   const rnd=(a,b)=>a+Math.random()*(b-a);
   const pick=()=>GLYPHS[Math.floor(Math.random()*GLYPHS.length)];
@@ -31,12 +31,37 @@ function Matrix({section,phase,onNavigate}){
    const logoSize=Math.min(ny*.22,nx*.205);
    c.font='900 '+logoSize+'px Arial,sans-serif';
    c.fillText('CODE_MUM',nx/2,ny*.47,nx*.94);
-   const small=Math.max(2.4,Math.min(nx*.042,ny*.042));
-   c.font='bold '+small+'px Arial,sans-serif';
-   c.textAlign='left';c.fillText('ГАЛЕРЕЯ',2,Math.max(5,ny*.13));
-   c.fillText('КАЛЬКУЛЯТОР',2,ny-7);
-   c.textAlign='right';c.fillText('РАБОТЫ',nx-2,Math.max(5,ny*.13));
-   c.fillText('КОНТАКТЫ',nx-2,ny-7);
+   // The menu has its own finer sampling resolution but shares the exact screen coordinates and glyph renderer.
+   // Each Cyrillic letter is sampled at >= 6 pixels of height instead of being crushed into 2-3 grid rows.
+   menuGlyphs=[];
+   const menuFont=Math.max(17,Math.min(28,w*.046));
+   const fine=Math.max(2.4,menuFont/10);
+   const labels=[
+    {text:'ГАЛЕРЕЯ',anchor:'left',x:w*.045,y:h*.135},
+    {text:'РАБОТЫ',anchor:'right',x:w*.955,y:h*.135},
+    {text:'КАЛЬКУЛЯТОР',anchor:'left',x:w*.045,y:h*.865},
+    {text:'КОНТАККТЫ',anchor:'right',x:w*.955,y:h*.865}
+   ];
+   labels[3].text='КОНТАКТЫ';
+   for(const item of labels){
+    const mask=document.createElement('canvas');
+    const mc=mask.getContext('2d');
+    mc.font='900 '+menuFont+'px Arial,Helvetica,sans-serif';
+    const maxWidth=w*.44;
+    const measured=mc.measureText(item.text).width;
+    const font=Math.min(menuFont,menuFont*maxWidth/Math.max(measured,1));
+    const mw=Math.ceil(maxWidth/fine),mh=Math.ceil(font*1.5/fine);
+    mask.width=mw;mask.height=mh;
+    mc.fillStyle='#fff';mc.textAlign=item.anchor;mc.textBaseline='middle';
+    mc.font='900 '+font/fine+'px Arial,Helvetica,sans-serif';
+    mc.fillText(item.text,item.anchor==='left'?0:mw,mh/2,mw);
+    const pixels=mc.getImageData(0,0,mw,mh).data;
+    const x0=item.anchor==='left'?item.x:item.x-mw*fine;
+    const y0=item.y-mh*fine/2;
+    for(let yy=0;yy<mh;yy++)for(let xx=0;xx<mw;xx++){
+     if(pixels[(yy*mw+xx)*4+3]>105)menuGlyphs.push({x:x0+xx*fine,y:y0+yy*fine,seed:(xx*13+yy*7)%GLYPHS.length,size:fine});
+    }
+   }
    const pix=c.getImageData(0,0,nx,ny).data;
    for(let y=0;y<ny;y++)for(let x=0;x<nx;x++)if(pix[(y*nx+x)*4+3]>85)masks[y][x]=1;
   }
@@ -69,7 +94,7 @@ function Matrix({section,phase,onNavigate}){
      ctx.shadowBlur=0;
     }
    }
-   if(phase!=='home'){
+   if(section===null){\n    // Glyphs for menu and logo belong to one animated canvas, not HTML text overlays.\n    ctx.font='bold '+Math.max(3,menuGlyphs[0]?.size||3)+'px monospace';\n    for(const g of menuGlyphs){\n     const light=.74+.22*Math.sin(frame*.05+g.seed);\n     ctx.fillStyle='rgba(175,255,199,'+(forming*light)+')';\n     ctx.fillText(GLYPHS[(g.seed+Math.floor(frame/9))%GLYPHS.length],g.x,g.y);\n    }\n   }\n   if(phase!=='home'){
     const cx=w/2,cy=h/2;
     const strength=phase==='enter'?Math.min(1,frame/38):phase==='exit'?Math.min(1,frame/35):.25;
     ctx.save();ctx.translate(cx,cy);
@@ -86,21 +111,21 @@ function Matrix({section,phase,onNavigate}){
  return <canvas ref={ref} className="matrix" aria-hidden="true"/>;
 }
 function App(){
- const [section,setSection]=useState(null),[phase,setPhase]=useState('home'),[pending,setPending]=useState(null);
+ const [section,setSection]=useState(null),[phase,setPhase]=useState('home'),[pending,setPending]=useState(null);\n const [target,setTarget]=useState({x:50,y:50});
  const [type,setType]=useState('site'),[pages,setPages]=useState(5),[ai,setAi]=useState(false);
  const [form,setForm]=useState({name:'',email:'',message:''});
  const timers=useRef([]);
  const schedule=(fn,ms)=>{const id=window.setTimeout(fn,ms);timers.current.push(id)};
  useEffect(()=>()=>timers.current.forEach(clearTimeout),[]);
- function enter(id){if(phase!=='home')return;setPending(id);setPhase('enter');schedule(()=>{setSection(id);setPhase('world');setPending(null)},1300)}
- function exit(){if(phase!=='world')return;setPhase('exit');schedule(()=>{setSection(null);setPhase('home')},950)}
+ function enter(id){if(phase!=='home')return;const coords={gallery:[18,13.5],works:[82,13.5],calc:[18,86.5],contact:[82,86.5]};const [x,y]=coords[id];setTarget({x,y});setPending(id);setPhase('enter');schedule(()=>{setSection(id);setPhase('world');setPending(null)},1750)}
+ function exit(){if(phase!=='world')return;setPhase('exit');schedule(()=>{setSection(null);setPhase('home')},1250)}
  const selected=SECTIONS.find(s=>s.id===section);
  const price=(type==='site'?35000:type==='app'?110000:65000)+Math.max(0,pages-1)*2500+(ai?30000:0);
  const regions=[['gallery','tl'],['works','tr'],['calc','bl'],['contact','br']];
  return <main><section className={'screen phase-'+phase}>
  <Matrix section={section} phase={phase}/>
  {phase==='home'&&<><h1 className="sr-only">CODE_MUM — цифровая студия</h1>{regions.map(([id,pos])=><button key={id} className={'hotspot '+pos} onClick={()=>enter(id)} aria-label={'Открыть '+SECTIONS.find(s=>s.id===id).label}><span className="sr-only">{SECTIONS.find(s=>s.id===id).label}</span></button>)}<div className="home-hint">ВЫБЕРИТЕ РАЗДЕЛ — ВОЙДИТЕ В КОД</div></>}
- {phase==='enter'&&<div className="warp" key="enter"><div className="warp-label">ЗАГРУЗКА МИРА / {SECTIONS.find(s=>s.id===pending)?.label}</div><div className="warp-center">›››</div></div>}
+ {phase==='enter'&&<div className="warp" key="enter"><div className="warp-vortex"/><div className="warp-label">ВХОД В МИР / {SECTIONS.find(s=>s.id===pending)?.label}</div></div>}
  {section&&<div className={'world '+(phase==='exit'?'world-out':'world-in')}>
   <div className="world-bar"><button className="back" onClick={exit} disabled={phase!=='world'}>← В МАТРИЦУ</button><span>CODE_MUM / {selected?.label}</span></div>
   <div className="world-scene"><div className="world-grid"/><div className="world-inner">
