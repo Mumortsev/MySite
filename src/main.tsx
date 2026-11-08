@@ -28,7 +28,7 @@ function Building({onEnter}:{onEnter:(p:Page)=>void}){
  return <group>
  <mesh rotation={[-Math.PI/2,0,0]} position={[0,-3.25,-32]}><planeGeometry args={[10,78]}/><meshStandardMaterial color="#0d1912" metalness={.4} roughness={.45}/></mesh>
  <mesh rotation={[Math.PI/2,0,0]} position={[0,3.25,-32]}><planeGeometry args={[10,78]}/><meshStandardMaterial color="#0d1812" metalness={.35}/></mesh>
- {[-5,5].map(x=><mesh key={x} position={[x,0,-32]}><boxGeometry args={[.12,6.5,78]}/><meshStandardMaterial color="#182a20" metalness={.65} roughness={.3}/></mesh>)}
+ {[-5,5].flatMap(x=>Array.from({length:18},(_,i)=>{const z=5-i*4;const opening=pages.some(p=>p.side===Math.sign(x)&&Math.abs(p.z-z)<3);return opening?null:<mesh key={x+'-'+i} position={[x,0,z]}><boxGeometry args={[.12,6.5,4]}/><meshStandardMaterial color="#182a20" metalness={.65} roughness={.3}/></mesh>}))}
  {Array.from({length:17},(_,i)=><group key={i} position={[0,0,-i*4]}>
  <mesh position={[0,3.15,0]}><boxGeometry args={[10,.07,.08]}/><meshBasicMaterial color="#377d54"/></mesh>
  <mesh position={[-4.9,0,0]}><boxGeometry args={[.06,6.3,.06]}/><meshBasicMaterial color="#377d54"/></mesh>
