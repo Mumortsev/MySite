@@ -19,7 +19,8 @@ const variants = [
   { name: 'Chrome × Floating Lines', label: 'Хром · линии', theme: 'dark' },
   { name: 'Chrome × Side Rays', label: 'Хром · боковой свет', theme: 'dark' },
   { name: 'Chrome × Liquid Chrome', label: 'Хром · жидкий металл', theme: 'dark' },
-  { name: 'Chrome × Silk', label: 'Светлая · хром на шёлке', theme: 'light' }
+  { name: 'Chrome × Silk', label: 'Светлая · хром на шёлке', theme: 'light' },
+  { name: 'Porcelain Studio', label: 'Светлая · молочная керамика', theme: 'light' }
 ];
 
 function IntermittentLightning({ mobile, dpr, reduced }) {
@@ -77,19 +78,26 @@ function App() {
     chromeScene(<FloatingLines linesGradient={['#657a90','#d6e0e9']} lineCount={mobile ? 3 : 5} lineWidth={0.8} animationSpeed={0.4} glow={0.35} amplitude={0.6} interactive={!mobile} dpr={mobile ? 0.65 : 1} />),
     chromeScene(<SideRays rayColor1="#b5c5d5" rayColor2="#758da7" origin="top-right" speed={0.5} intensity={0.7} density={3} glow={0.4} followMouse={!mobile} maxDevicePixelRatio={mobile ? 0.65 : 1} />),
     chromeScene(<LiquidChrome color="#778594" speed={0.12} amplitude={0.14} detail={mobile ? 2 : 3} roughness={0.65} exposure={0.5} interactive={!mobile} maxDevicePixelRatio={mobile ? 0.55 : 0.9} />),
-    silkChrome
+    silkChrome,
+    <div className="porcelain-scene" aria-label="Фарфоровая скульптурная надпись STUDIO">
+      <div className="porcelain-halo" />
+      <div className="porcelain-sculpture porcelain-sculpture--one" />
+      <div className="porcelain-sculpture porcelain-sculpture--two" />
+      <div className="porcelain-word-wrap"><div className="porcelain-word" data-word="STUDIO">STUDIO</div><div className="porcelain-word-shadow">STUDIO</div></div>
+      <div className="porcelain-floor" />
+    </div>
   ][index];
   return (
     <main className={theme}>
       <header><strong>STUDIO / 001</strong><span>DIGITAL · DESIGN · AI</span></header>
       <nav aria-label="Выбор оформления">{variants.map((v, i) => <button key={v.name} type="button" className={index === i ? 'active' : ''} aria-pressed={index === i} onClick={() => setIndex(i)}><span className="number">0{i + 1}</span><span>{v.name}</span><small>{v.label}</small></button>)}</nav>
-      <section className={`hero${index >= 2 ? " hero--chrome" : ""}`}>
+      <section className={`hero${index >= 2 && index <= 8 ? " hero--chrome" : ""}`}>
         <div className="scene" key={index}><Suspense fallback={<div className="loading">Загрузка эффекта…</div>}>{scene}</Suspense></div>
         {index < 2 && <div className="overlay">
           <p className="eyebrow">INDEPENDENT DIGITAL STUDIO</p>
           <h1>Beyond<br/><em>the ordinary.</em></h1>
           <p className="subtitle">Создаём цифровые продукты, которые работают, впечатляют и открывают новые возможности.</p>
-          <div className="footerline"><span>ORIGINAL REACT BITS</span><span>{variants[index].name.toUpperCase()} · 0{index + 1} / 09</span></div>
+          <div className="footerline"><span>ORIGINAL REACT BITS</span><span>{variants[index].name.toUpperCase()} · 0{index + 1} / 10</span></div>
         </div>}
       </section>
       <footer><span>React Bits + Codrops · мобильная подборка</span><a href="https://github.com/DavidHDev/react-bits" target="_blank" rel="noreferrer">SOURCE · GITHUB ↗</a></footer>
