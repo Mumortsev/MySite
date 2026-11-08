@@ -21,6 +21,31 @@ const variants = [
   { name: 'Chrome × Lightning', label: 'Тёмная · хром и молнии', theme: 'dark' }
 ];
 
+function IntermittentLightning({ mobile, dpr, reduced }) {
+  const [strike, setStrike] = useState(null);
+  useEffect(() => {
+    if (reduced) return;
+    let timer;
+    let cancelled = false;
+    const next = () => {
+      const delay = 3200 + Math.random() * 4600;
+      timer = window.setTimeout(() => {
+        if (cancelled) return;
+        setStrike({ id: Date.now(), x: (Math.random() - 0.5) * 1.15 });
+        timer = window.setTimeout(() => {
+          if (cancelled) return;
+          setStrike(null);
+          next();
+        }, 420 + Math.random() * 330);
+      }, delay);
+    };
+    next();
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, [reduced]);
+  if (!strike) return null;
+  return <Lightning key={strike.id} color="#b8d5fa" bolts={1} xOffset={strike.x} spread={0.28} branches={0.32} glow={0.7} intensity={0.8} speed={0.8} flicker={0.35} mouseInteraction={false} dpr={mobile ? 0.65 : dpr} />;
+}
+
 function App() {
   const [index, setIndex] = useState(0);
   const [mobile, setMobile] = useState(() => window.matchMedia('(max-width: 700px)').matches);
@@ -45,7 +70,7 @@ function App() {
     <Ballpit count={mobile ? 32 : 75} colors={['#e8e7e3','#9fa7b0','#747b83']} material="metal" minSize={0.35} maxSize={0.8} drift={0.2} dpr={dpr} />,
     <MagnetLines spacing={mobile ? 38 : 32} lineColor="#d3d8dc" accentColor="#a5b4c1" lineWidth={1.5} lineHeight={18} radius={160} maxDevicePixelRatio={dpr} />,
     <div className="original-demo"><p>Liquid Distortion · оригинальный Codrops</p><a href="https://tympanus.net/Development/LiquidDistortion/" target="_blank" rel="noreferrer">Открыть оригинальную интерактивную демонстрацию ↗</a><small>Этот проект использует отдельный PixiJS-движок и пока не встроен в Hero.</small></div>,
-    <div className="chrome-lightning" aria-label="Хромированная надпись с молниями"><div className="chrome-lightning__bolts"><Lightning color="#aecaf0" bolts={mobile ? 1 : 2} spread={0.56} branches={0.48} glow={0.9} intensity={0.95} speed={0.65} flicker={0.4} mouseInteraction={!mobile} dpr={mobile ? 0.7 : dpr} paused={reduced} /></div><div className="chrome-lightning__metal"><MetallicPaint text="STUDIO" color="#dce7ef" backgroundColor="#000000" density={mobile ? 0.85 : 1.5} distortion={0.045} dispersion={0.2} scale={mobile ? 0.95 : 0.8} speed={0.48} dpr={mobile ? 0.8 : dpr} paused={reduced} /></div><div className="chrome-lightning__vignette" /></div>
+    <div className="chrome-lightning" aria-label="Хромированная надпись с молниями"><div className="chrome-lightning__bolts"><IntermittentLightning mobile={mobile} dpr={dpr} reduced={reduced} /></div><div className="chrome-lightning__metal"><MetallicPaint text="STUDIO" color="#dce7ef" backgroundColor="#000000" density={mobile ? 0.85 : 1.5} distortion={0.045} dispersion={0.2} scale={mobile ? 0.95 : 0.8} speed={0.48} dpr={mobile ? 0.8 : dpr} paused={reduced} /></div><div className="chrome-lightning__vignette" /></div>
   ][index];
   return (
     <main className={theme}>
@@ -53,12 +78,12 @@ function App() {
       <nav aria-label="Выбор оформления">{variants.map((v, i) => <button key={v.name} type="button" className={index === i ? 'active' : ''} aria-pressed={index === i} onClick={() => setIndex(i)}><span className="number">0{i + 1}</span><span>{v.name}</span><small>{v.label}</small></button>)}</nav>
       <section className={`hero${index === 8 ? " hero--chrome" : ""}`}>
         <div className="scene" key={index}><Suspense fallback={<div className="loading">Загрузка эффекта…</div>}>{scene}</Suspense></div>
-        <div className="overlay">
+        {index !== 8 && <div className="overlay">
           <p className="eyebrow">INDEPENDENT DIGITAL STUDIO</p>
           <h1>Beyond<br/><em>the ordinary.</em></h1>
           <p className="subtitle">Создаём цифровые продукты, которые работают, впечатляют и открывают новые возможности.</p>
           <div className="footerline"><span>ORIGINAL REACT BITS</span><span>{variants[index].name.toUpperCase()} · 0{index + 1} / 09</span></div>
-        </div>
+        </div>}
       </section>
       <footer><span>React Bits + Codrops · мобильная подборка</span><a href="https://github.com/DavidHDev/react-bits" target="_blank" rel="noreferrer">SOURCE · GITHUB ↗</a></footer>
     </main>
