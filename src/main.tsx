@@ -57,8 +57,8 @@ function Corridor(){
 }
 function CameraRig({entered}:{entered:boolean}){
  const{camera}=useThree();const pos=useRef({z:8});
- useEffect(()=>{gsap.to(pos.current,{z:entered?-2.8:8,duration:entered?2.8:1.6,ease:'power3.inOut'})},[entered]);
- useFrame(({pointer},dt)=>{camera.position.z=pos.current.z;camera.position.x=THREE.MathUtils.damp(camera.position.x,pointer.x*(entered?.15:.25),1,dt);camera.position.y=THREE.MathUtils.damp(camera.position.y,pointer.y*(entered?.1:.16),1,dt);camera.lookAt(0,0,-2)});
+ useEffect(()=>{gsap.to(pos.current,{z:entered?-8:8,duration:entered?2.8:1.6,ease:'power3.inOut'})},[entered]);
+ useFrame(({pointer},dt)=>{camera.position.z=pos.current.z;camera.position.x=THREE.MathUtils.damp(camera.position.x,pointer.x*(entered?.15:.25),1,dt);camera.position.y=THREE.MathUtils.damp(camera.position.y,pointer.y*(entered?.1:.16),1,dt);camera.lookAt(0,0,camera.position.z-10)});
  return null;
 }
 function World({entered,selected}:{entered:boolean;selected:Page}){
@@ -86,16 +86,16 @@ function Contacts(){
  <button className="primary" type="submit">Создать письмо ↗</button><small>Откроется почтовое приложение для отправки.</small></form>;
 }
 function App(){
- const[entered,setEntered]=useState(false),[selected,setSelected]=useState<Page>('works'),[transition,setTransition]=useState(false);
+ const[entered,setEntered]=useState(false),[flying,setFlying]=useState(false),[selected,setSelected]=useState<Page>('works'),[transition,setTransition]=useState(false);
  const[reduced,setReduced]=useState(false);
  useEffect(()=>{const m=window.matchMedia('(prefers-reduced-motion: reduce)');setReduced(m.matches)},[]);
- const enter=()=>{if(transition)return;setTransition(true);setEntered(true);window.setTimeout(()=>setTransition(false),reduced?150:3000)};
- const leave=()=>{setEntered(false);setTransition(false)};
+ const enter=()=>{if(transition||entered)return;setTransition(true);setFlying(true);window.setTimeout(()=>{setEntered(true);setFlying(false);setTransition(false)},reduced?150:2850)};
+ const leave=()=>{setEntered(false);setFlying(false);setTransition(false)};
  const current=pages.find(p=>p.id===selected)!;
- return <main className={'app '+(entered?'is-entered':'is-intro')}>
- <div className="stage"><World entered={entered} selected={selected}/><div className="stage-vignette"/></div>
+ return <main className={'app '+(entered?'is-entered':flying?'is-flying':'is-intro')}>
+ <div className="stage"><World entered={entered||flying} selected={selected}/><div className="stage-vignette"/></div>
  <header className="site-header"><button className="brand" onClick={leave}>CODE<span>_</span>MUM</button>{entered&&<nav aria-label="Основная навигация">{pages.map(p=><button key={p.id} className={selected===p.id?'current':''} onClick={()=>setSelected(p.id)}>{p.label}</button>)}</nav>}<span className="header-index">DIGITAL STUDIO / 2026</span></header>
- {!entered?<section className="intro" aria-label="Главная"><div className="intro-copy"><div className="eyebrow"><i/> INDEPENDENT DIGITAL STUDIO</div><h1>Beyond<br/><em>the code.</em></h1><p>Создаём цифровые миры, которые хочется исследовать.</p><button className="primary enter" onClick={enter} disabled={transition}>Войти в пространство <span>↗</span></button></div><div className="intro-bottom"><span>ДИЗАЙН / РАЗРАБОТКА / AI</span><span>01 — ∞</span></div></section>:
+ {!entered?<section className={'intro '+(flying?'intro-departing':'')} aria-label="Главная"><div className="intro-copy"><div className="eyebrow"><i/> INDEPENDENT DIGITAL STUDIO</div><h1>Beyond<br/><em>the code.</em></h1><p>Создаём цифровые миры, которые хочется исследовать.</p><button className="primary enter" onClick={enter} disabled={transition}>Войти в пространство <span>↗</span></button></div><div className="intro-bottom"><span>ДИЗАЙН / РАЗРАБОТКА / AI</span><span>01 — ∞</span></div></section>:
  <section className="content" key={selected}><div className="content-head"><span className="eyebrow">{current.eyebrow}</span><h2>{current.title}</h2><p>{current.intro}</p></div>
  {(selected==='works'||selected==='gallery')&&<div className="projects">{(selected==='works'?['Сайты нового поколения','Мобильные продукты','Интеллектуальные инструменты']:['Пространственные интерфейсы','Живая типографика','Цифровые материалы']).map((name,i)=><article className="project" key={name}><span>0{i+1} / {selected==='works'?'НАПРАВЛЕНИЕ':'ЭКСПЕРИМЕНТ'}</span><div className={'project-art art-'+i}><div className="project-shape"/></div><h3>{name}</h3><p>{selected==='works'?'Направление работы студии':'Концептуальное исследование'}</p></article>)}</div>}
  {selected==='calculator'&&<Calculator/>}{selected==='contacts'&&<Contacts/>}
