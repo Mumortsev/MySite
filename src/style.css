@@ -62,3 +62,20 @@
 .menu-label{display:block;font:700 clamp(11px,1vw,14px)/1.3 monospace;color:#b9fbd0;letter-spacing:.045em;white-space:nowrap;text-shadow:0 0 7px #34ff7c55;transition:color .2s,text-shadow .2s}
 .hotspot:hover .menu-label,.hotspot:focus-visible .menu-label{color:#fff;text-shadow:0 0 16px #55ff9c}
 @media(max-width:700px){.hotspot{min-width:43%;min-height:64px;padding:16px 4px}.menu-label{font-size:11px;letter-spacing:0}}
+
+/* V2.2: transparent hit areas aligned to the glyph-rendered navigation. */
+.screen .hotspot{position:absolute;z-index:3;width:21%;min-width:0;height:64px;min-height:0;left:auto;right:auto;top:9.5%;bottom:auto;transform:translate(-50%,-50%);padding:0;background:transparent;border:0}
+.screen .hotspot:before{display:none}
+.screen .nav-gallery{left:16%}
+.screen .nav-works{left:39%}
+.screen .nav-calc{left:62%}
+.screen .nav-contact{left:85%}
+.screen .hotspot:hover{background:rgba(130,255,172,.045)}
+.screen .hotspot:focus-visible{outline:1px solid #baffd0}
+@media(max-width:699px){
+ .screen .hotspot{left:77%;width:46%;height:6.7svh;min-height:43px}
+ .screen .nav-gallery{top:10.5%}
+ .screen .nav-works{top:17.7%}
+ .screen .nav-calc{top:24.9%}
+ .screen .nav-contact{top:32.1%}
+}
