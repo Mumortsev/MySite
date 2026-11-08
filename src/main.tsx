@@ -1,53 +1,44 @@
-import React, {useEffect,useState} from 'react';
-import {createRoot} from 'react-dom/client';
-import Ribbons from './components/Ribbons/Ribbons';
-import Beams from './components/Beams/Beams';
+import React, { Suspense, lazy, useState } from 'react';
+import { createRoot } from 'react-dom/client';
 import './style.css';
 
-const variants = [
-  {name:'Floating Ribbons',mode:'Светлая'},
-  {name:'Floating Ribbons',mode:'Тёмная'},
-  {name:'Architectural Beams',mode:'Светлая'},
-  {name:'Architectural Beams',mode:'Тёмная'}
+const effects = [
+  { name: 'Aurora', Component: lazy(() => import('./components/ReactBits/Aurora/Aurora.jsx')) },
+  { name: 'DarkVeil', Component: lazy(() => import('./components/ReactBits/DarkVeil/DarkVeil.jsx')) },
+  { name: 'Galaxy', Component: lazy(() => import('./components/ReactBits/Galaxy/Galaxy.jsx')) },
+  { name: 'Threads', Component: lazy(() => import('./components/ReactBits/Threads/Threads.jsx')) },
+  { name: 'Silk', Component: lazy(() => import('./components/ReactBits/Silk/Silk.jsx')) },
+  { name: 'Waves', Component: lazy(() => import('./components/ReactBits/Waves/Waves.jsx')) },
+  { name: 'Orb', Component: lazy(() => import('./components/ReactBits/Orb/Orb.jsx')) },
+  { name: 'Lightning', Component: lazy(() => import('./components/ReactBits/Lightning/Lightning.jsx')) },
+  { name: 'Particles', Component: lazy(() => import('./components/ReactBits/Particles/Particles.jsx')) },
+  { name: 'Plasma', Component: lazy(() => import('./components/ReactBits/Plasma/Plasma.jsx')) },
 ];
 
-function App(){
-  const [index,setIndex]=useState(0);
-  useEffect(()=>{
-    if(index>=2)return;
-    let frame=0;let active=true;let lastTouch=0;
-    const mark=()=>{lastTouch=performance.now()};
-    window.addEventListener('pointerdown',mark,{passive:true});
-    window.addEventListener('touchstart',mark,{passive:true});
-    const animate=(time:number)=>{
-      if(!active)return;
-      const scene=document.querySelector('.scene');
-      if(scene && time-lastTouch>3500){
-        const rect=scene.getBoundingClientRect();
-        const x=rect.left+rect.width*(.5+.24*Math.sin(time*.00038));
-        const y=rect.top+rect.height*(.48+.27*Math.sin(time*.00053));
-        window.dispatchEvent(new PointerEvent('pointermove',{clientX:x,clientY:y}));
-      }
-      frame=requestAnimationFrame(animate);
-    };
-    frame=requestAnimationFrame(animate);
-    return()=>{active=false;cancelAnimationFrame(frame);window.removeEventListener('pointerdown',mark);window.removeEventListener('touchstart',mark)};
-  },[index]);
-  const dark=index%2===1;
-  const beams=index>=2;
-  const background=dark?'#151616':'#f0eee8';
-  return <main className={dark?'dark':'light'}>
-    <header><strong>STUDIO / 001</strong><span>DIGITAL · DESIGN · AI</span></header>
-    <nav aria-label="Выбор Hero-блока">{variants.map((v,i)=><button key={i} type="button" aria-pressed={index===i} className={index===i?'active':''} onClick={()=>setIndex(i)}>{String(i+1).padStart(2,'0')} — {v.name} · {v.mode}</button>)}</nav>
-    <section className="hero">
-      <div className="scene" key={index}>
-        {beams
-          ? <Beams color={dark?'#c7d4cd':'#716f69'} backgroundColor={background} lightMode={!dark} speed={1.05} mouseInteraction={true} mouseStrength={1.1} beamWidth={120} waveLength={180} depth={1.4} twist={.35} glow={.9} brightness={2.1} quality={.75} />
-          : <Ribbons colors={dark?['#deded9','#9faaa7','#d1c7b7']:['#9c958c','#c6bcb0','#ded6c9']} backgroundColor={background} thickness={35} length={1.4} spread={18} stiffness={.45} bounce={.45} shape="lens" wave={.2} softness={.55} opacity={.95} />}
-      </div>
-      <div className="overlay"><p className="eyebrow">INDEPENDENT DIGITAL STUDIO</p><h1>Beyond<br/><em>the ordinary.</em></h1><p className="subtitle">Создаём цифровые продукты, которые работают, впечатляют и открывают новые возможности.</p><div className="footerline">HERO EXPERIMENT <span>{String(index+1).padStart(2,'0')} / 04</span></div></div>
-    </section>
-    <footer><span>Оригинальные компоненты React Bits · Ribbons / Beams</span><a href="https://reactbits.dev" target="_blank" rel="noreferrer">React Bits ↗</a></footer>
-  </main>
+function App() {
+  const [index, setIndex] = useState(0);
+  const [motionKey, setMotionKey] = useState(0);
+  const current = effects[index];
+  const Effect = current.Component;
+  const change = (next: number) => { setIndex(next); setMotionKey(n => n + 1); };
+  return (
+    <main className="dark">
+      <header><strong>STUDIO / 001</strong><span>DIGITAL · DESIGN · AI</span></header>
+      <div className="intro"><span className="eyebrow">REACT BITS / DARK HERO LAB</span><h2>Выбери свой эффект.</h2><p>10 оригинальных анимаций из открытого репозитория React Bits. Все варианты — в тёмном оформлении.</p></div>
+      <nav aria-label="Выбор анимации">{effects.map((item, i) => <button key={item.name} type="button" aria-pressed={index === i} className={index === i ? 'active' : ''} onClick={() => change(i)}>{String(i + 1).padStart(2, '0')} · {item.name}</button>)}</nav>
+      <section className="hero" aria-label={current.name}>
+        <div className="scene" key={motionKey}>
+          <Suspense fallback={<div className="loading">Загрузка эффекта…</div>}><Effect /></Suspense>
+        </div>
+        <div className="overlay">
+          <p className="eyebrow">INDEPENDENT DIGITAL STUDIO</p>
+          <h1>Beyond<br/><em>the ordinary.</em></h1>
+          <p className="subtitle">Создаём цифровые продукты, которые работают, впечатляют и открывают новые возможности.</p>
+          <div className="footerline">ORIGINAL REACT BITS · {current.name.toUpperCase()} <span>{String(index + 1).padStart(2, '0')} / {effects.length}</span></div>
+        </div>
+      </section>
+      <footer><span>Исходники: DavidHDev/react-bits · Без самодельных эффектов</span><a href="https://github.com/DavidHDev/react-bits" target="_blank" rel="noreferrer">GitHub React Bits ↗</a></footer>
+    </main>
+  );
 }
-createRoot(document.getElementById('root')!).render(<App/>);
+createRoot(document.getElementById('root')!).render(<App />);
