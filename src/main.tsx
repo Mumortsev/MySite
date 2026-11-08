@@ -17,7 +17,8 @@ const variants = [
   { name: 'Iridescence', label: 'Светлая · перламутр', theme: 'light' },
   { name: 'Ballpit', label: 'Тёмная · сферы', theme: 'dark' },
   { name: 'Magnet Lines', label: 'Тёмная · магнитные линии', theme: 'dark' },
-  { name: 'Liquid Distortion', label: 'Тёмная · слайдшоу', theme: 'dark' }
+  { name: 'Liquid Distortion', label: 'Тёмная · слайдшоу', theme: 'dark' },
+  { name: 'Chrome × Lightning', label: 'Тёмная · хром и молнии', theme: 'dark' }
 ];
 
 function App() {
@@ -43,19 +44,20 @@ function App() {
     <Iridescence color={[0.82,0.78,0.72]} speed={0.55} amplitude={0.08} detail={mobile ? 5 : 8} scale={1.1} resolution={mobile ? 0.65 : 1} brightness={1.2} />,
     <Ballpit count={mobile ? 32 : 75} colors={['#e8e7e3','#9fa7b0','#747b83']} material="metal" minSize={0.35} maxSize={0.8} drift={0.2} dpr={dpr} />,
     <MagnetLines spacing={mobile ? 38 : 32} lineColor="#d3d8dc" accentColor="#a5b4c1" lineWidth={1.5} lineHeight={18} radius={160} maxDevicePixelRatio={dpr} />,
-    <div className="original-demo"><p>Liquid Distortion · оригинальный Codrops</p><a href="https://tympanus.net/Development/LiquidDistortion/" target="_blank" rel="noreferrer">Открыть оригинальную интерактивную демонстрацию ↗</a><small>Этот проект использует отдельный PixiJS-движок и пока не встроен в Hero.</small></div>
+    <div className="original-demo"><p>Liquid Distortion · оригинальный Codrops</p><a href="https://tympanus.net/Development/LiquidDistortion/" target="_blank" rel="noreferrer">Открыть оригинальную интерактивную демонстрацию ↗</a><small>Этот проект использует отдельный PixiJS-движок и пока не встроен в Hero.</small></div>,
+    <div className="chrome-lightning" aria-label="Хромированная надпись с молниями"><div className="chrome-lightning__bolts"><Lightning color="#aecaf0" bolts={mobile ? 1 : 2} spread={0.56} branches={0.48} glow={0.9} intensity={0.95} speed={0.65} flicker={0.4} mouseInteraction={!mobile} dpr={mobile ? 0.7 : dpr} paused={reduced} /></div><div className="chrome-lightning__metal"><MetallicPaint text="STUDIO" color="#dce7ef" backgroundColor="#000000" density={mobile ? 0.85 : 1.5} distortion={0.045} dispersion={0.2} scale={mobile ? 0.95 : 0.8} speed={0.48} dpr={mobile ? 0.8 : dpr} paused={reduced} /></div><div className="chrome-lightning__vignette" /></div>
   ][index];
   return (
     <main className={theme}>
       <header><strong>STUDIO / 001</strong><span>DIGITAL · DESIGN · AI</span></header>
       <nav aria-label="Выбор оформления">{variants.map((v, i) => <button key={v.name} type="button" className={index === i ? 'active' : ''} aria-pressed={index === i} onClick={() => setIndex(i)}><span className="number">0{i + 1}</span><span>{v.name}</span><small>{v.label}</small></button>)}</nav>
-      <section className="hero">
+      <section className={`hero${index === 8 ? " hero--chrome" : ""}`}>
         <div className="scene" key={index}><Suspense fallback={<div className="loading">Загрузка эффекта…</div>}>{scene}</Suspense></div>
         <div className="overlay">
           <p className="eyebrow">INDEPENDENT DIGITAL STUDIO</p>
           <h1>Beyond<br/><em>the ordinary.</em></h1>
           <p className="subtitle">Создаём цифровые продукты, которые работают, впечатляют и открывают новые возможности.</p>
-          <div className="footerline"><span>ORIGINAL REACT BITS</span><span>{variants[index].name.toUpperCase()} · 0{index + 1} / 08</span></div>
+          <div className="footerline"><span>ORIGINAL REACT BITS</span><span>{variants[index].name.toUpperCase()} · 0{index + 1} / 09</span></div>
         </div>
       </section>
       <footer><span>React Bits + Codrops · мобильная подборка</span><a href="https://github.com/DavidHDev/react-bits" target="_blank" rel="noreferrer">SOURCE · GITHUB ↗</a></footer>
