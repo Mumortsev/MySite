@@ -1,4 +1,33 @@
-import React,{useState} from 'react';import{createRoot}from'react-dom/client';import{Canvas,useFrame}from'@react-three/fiber';import{Environment,Float}from'@react-three/drei';import * as THREE from'three';import './style.css';
-function Ribbons({dark}:{dark:boolean}){const ref=React.useRef<THREE.Group>(null);useFrame(({clock,pointer})=>{if(ref.current){ref.current.rotation.y=clock.elapsedTime*.13+pointer.x*.08;ref.current.rotation.x=pointer.y*.06}});return <group ref={ref}>{[0,1,2].map(i=><Float key={i} speed={.6+i*.15} rotationIntensity={.16} floatIntensity={.12}><mesh position={[i*.24-.2,i*.16-.12,-i*.24]} rotation={[.5+i*.4,i*.8,0]}><torusKnotGeometry args={[1.18,.13,220,14,2+i,3]}/><meshPhysicalMaterial color={dark?'#c4c4c1':'#d2c7b5'} metalness={dark?.85:.35} roughness={.23} clearcoat={1} side={THREE.DoubleSide}/></mesh></Float>)}</group>}
-function Beams({dark}:{dark:boolean}){const ref=React.useRef<THREE.Group>(null);useFrame(({clock,pointer})=>{if(ref.current){ref.current.rotation.y=Math.sin(clock.elapsedTime*.16)*.12+pointer.x*.08;ref.current.rotation.x=pointer.y*.07}});return <group ref={ref}>{Array.from({length:17},(_,i)=><mesh key={i} position={[(i-8)*.24,0,Math.sin(i*.6)*.7]} rotation={[0,0,-.3+Math.sin(i*.3)*.3]}><cylinderGeometry args={[.012,.012,5,8]}/><meshStandardMaterial color={dark?'#d7e7dc':'#575d57'} emissive={dark?'#789b90':'#333833'} emissiveIntensity={dark?.8:.1} metalness={.7} roughness={.2}/></mesh>)}</group>}
-function App(){const [n,setN]=useState(0),dark=n%2===1,beams=n>=2;return <main className={dark?'dark':'light'}><header><strong>STUDIO / 001</strong><span>DIGITAL · DESIGN · AI</span></header><nav>{['Ribbons · Light','Ribbons · Dark','Beams · Light','Beams · Dark'].map((v,i)=><button key={v} className={i===n?'active':''} onClick={()=>setN(i)}>{String(i+1).padStart(2,'0')} — {v}</button>)}</nav><section className="hero"><div className="scene"><Canvas camera={{position:[0,0,6],fov:48}} dpr={[1,1.7]} gl={{antialias:true,alpha:true}}><ambientLight intensity={dark?.8:1.8}/><directionalLight position={[3,5,5]} intensity={dark?3:2}/><pointLight position={[-4,-2,3]} intensity={dark?4:1.5} color={dark?'#c8e3d9':'#ffffff'}/>{beams?<Beams dark={dark}/>:<Ribbons dark={dark}/>}<Environment preset="city"/></Canvas></div><div className="overlay"><p className="eyebrow">INDEPENDENT DIGITAL STUDIO</p><h1>Beyond<br/><em>the ordinary.</em></h1><p className="subtitle">Создаём цифровые продукты, которые работают, впечатляют и открывают новые возможности.</p><div className="footerline">HERO EXPERIMENT <span>{String(n+1).padStart(2,'0')} / 04</span></div></div></section><footer><span>Прототипы на Three.js, не оригинальные компоненты React Bits.</span><a href="https://reactbits.dev" target="_blank">React Bits ↗</a></footer></main>}createRoot(document.getElementById('root')!).render(<App/>);
+import React, {useState} from 'react';
+import {createRoot} from 'react-dom/client';
+import Ribbons from './components/Ribbons/Ribbons';
+import Beams from './components/Beams/Beams';
+import './style.css';
+
+const variants = [
+  {name:'Floating Ribbons',mode:'Светлая'},
+  {name:'Floating Ribbons',mode:'Тёмная'},
+  {name:'Architectural Beams',mode:'Светлая'},
+  {name:'Architectural Beams',mode:'Тёмная'}
+];
+
+function App(){
+  const [index,setIndex]=useState(0);
+  const dark=index%2===1;
+  const beams=index>=2;
+  const background=dark?'#151616':'#f0eee8';
+  return <main className={dark?'dark':'light'}>
+    <header><strong>STUDIO / 001</strong><span>DIGITAL · DESIGN · AI</span></header>
+    <nav aria-label="Выбор Hero-блока">{variants.map((v,i)=><button key={i} type="button" aria-pressed={index===i} className={index===i?'active':''} onClick={()=>setIndex(i)}>{String(i+1).padStart(2,'0')} — {v.name} · {v.mode}</button>)}</nav>
+    <section className="hero">
+      <div className="scene" key={index}>
+        {beams
+          ? <Beams color={dark?'#c7d4cd':'#716f69'} backgroundColor={background} lightMode={!dark} speed={.55} mouseInteraction={true} mouseStrength={.35} beamWidth={2} quality={1} />
+          : <Ribbons colors={dark?['#deded9','#9faaa7','#d1c7b7']:['#9c958c','#c6bcb0','#ded6c9']} backgroundColor={background} thickness={28} length={.65} spread={.35} stiffness={.22} bounce={.1} shape="lens" wave={.2} softness={.55} opacity={.95} />}
+      </div>
+      <div className="overlay"><p className="eyebrow">INDEPENDENT DIGITAL STUDIO</p><h1>Beyond<br/><em>the ordinary.</em></h1><p className="subtitle">Создаём цифровые продукты, которые работают, впечатляют и открывают новые возможности.</p><div className="footerline">HERO EXPERIMENT <span>{String(index+1).padStart(2,'0')} / 04</span></div></div>
+    </section>
+    <footer><span>Оригинальные компоненты React Bits · Ribbons / Beams</span><a href="https://reactbits.dev" target="_blank" rel="noreferrer">React Bits ↗</a></footer>
+  </main>
+}
+createRoot(document.getElementById('root')!).render(<App/>);
