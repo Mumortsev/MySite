@@ -7,3 +7,6 @@
 
 /* Shared Chrome compositions: background stays behind the original MetallicPaint shader. */
 .chrome-layer{position:absolute;inset:0;width:100%;height:100%}.chrome-layer--background{z-index:1;opacity:.66;overflow:hidden}.chrome-layer--text{z-index:2;mix-blend-mode:screen;pointer-events:none}.chrome-lightning__vignette{z-index:3}.hero--chrome .scene{background:#070a10}@media(max-width:700px){.chrome-layer--text{inset:12% -9% 8%}.chrome-layer--background{inset:0 -12%}}
+
+/* Pearl Silk × dark chrome lettering — no dark overlay or vignette. */
+.chrome-lightning--silk{background:#e9e2d9}.chrome-lightning--silk .chrome-layer--background{opacity:1}.chrome-layer--silk-text{mix-blend-mode:multiply;filter:contrast(1.18)}.hero--chrome:has(.chrome-lightning--silk) .scene{background:#e9e2d9}@media(max-width:700px){.chrome-layer--silk-text{inset:12% -9% 8%}}
