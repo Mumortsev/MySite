@@ -25,41 +25,7 @@ const projects=[
 const stages=[['01','Знакомство','Разбираемся в задаче, аудитории и результате.'],['02','Концепция','Определяем архитектуру, визуальный язык и сценарии.'],['03','Разработка','Создаём, анимируем и соединяем все функции.'],['04','Запуск','Тестируем, публикуем и помогаем развивать продукт.']];
 function App(){
  const heroFrame=useRef<HTMLIFrameElement>(null);
- const zoneRef=useRef<HTMLDivElement>(null);
- const gridRef=useRef<HTMLDivElement>(null);
-
- useEffect(()=>{
-   const grid=gridRef.current,zone=zoneRef.current;
-   if(!grid||!zone)return;
-   const pulse=()=>{
-     if(document.hidden)return;
-     const rect=zone.getBoundingClientRect();
-     const visibleTop=Math.max(0,rect.top),visibleBottom=Math.min(innerHeight,rect.bottom);
-     if(visibleBottom-visibleTop<100)return;
-     const x=Math.round(rect.width*(.18+Math.random()*.64));
-     const y=Math.round(visibleTop+(visibleBottom-visibleTop)*(.2+Math.random()*.6)-rect.top);
-     const angles=24;
-     const radius=90+Math.random()*45;
-     const w=Math.max(1,rect.width),h=Math.max(1,rect.height);
-     const points=Array.from({length:angles},(_,i)=>{
-       const angle=i/angles*Math.PI*2;
-       const r=radius*(.74+Math.random()*.52);
-       return ((x+Math.cos(angle)*r)/w*100).toFixed(3)+'% '+((y+Math.sin(angle)*r)/h*100).toFixed(3)+'%';
-     }).join(',');
-     grid.style.clipPath='polygon('+points+')';
-     grid.style.webkitClipPath='polygon('+points+')';
-     grid.style.webkitMaskImage='none';
-     grid.style.maskImage='none';
-     grid.classList.remove('square-grid-visible');
-     void grid.offsetWidth;
-     grid.classList.add('square-grid-visible');
-     window.setTimeout(()=>grid.classList.remove('square-grid-visible'),2200);
-   };
-   const first=window.setTimeout(pulse,900);
-   const timer=window.setInterval(pulse,5000);
-   return()=>{clearTimeout(first);clearInterval(timer)};
- },[]);
-  const touchX=useRef<number|null>(null);
+ const touchX=useRef<number|null>(null);
  const gesture=(x:number,y:number,dx:number)=>heroFrame.current?.contentWindow?.postMessage({type:'cm-gesture',x,y,dx},'*');
  const[theme,setTheme]=useState<Theme>(()=>{const saved=localStorage.getItem('cm-theme');return saved==='dark'||saved==='light'?saved:matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'});
  const[profile,setProfile]=useState<Profile>(getProfile);
@@ -94,8 +60,8 @@ function App(){
  <div className="hero-copy"><div className="eyebrow"><span className="live-dot"/> ЦИФРОВАЯ СТУДИЯ / CODE_M</div><h1>ЗА ГРАНЬЮ<br/><em>КОДА.</em></h1><p>Создаём сайты, приложения и цифровые продукты, в которых технологии встречаются с дизайном.</p><a className="primary-cta" href="#services">Исследовать возможности <span>↗</span></a></div>
  <div className="hero-foot"><span>ТЕХНОЛОГИИ · ДИЗАЙН · ДВИЖЕНИЕ</span><a href="#services">ЛИСТАЙТЕ ВНИЗ ↓</a></div>
  </section>
- <div className="content-zone" ref={zoneRef}>
- <div className="ambient-background" aria-hidden="true"><div className="aurora-field"/><div className="aurora-mesh" ref={gridRef}/><div className="aurora-veil"/></div>
+ <div className="content-zone">
+ <div className="ambient-background" aria-hidden="true"><div className="aurora-field"/><div className="aurora-mesh"/><div className="aurora-veil"/></div>
  <section id="services" className="content-section services"><div className="section-top"><span className="eyebrow">01 / ЭКСПЕРТИЗА</span><h2>Делаем сложное<br/><em>простым.</em></h2><p>Выберите направление — карточка раскроется и покажет, что входит в работу.</p></div>
  <div className="service-stack">{services.map(x=><article key={x.id} className={'service-expand '+(expanded===x.id?'is-open':'')}><button className="service-head" aria-expanded={expanded===x.id} onClick={()=>setExpanded(v=>v===x.id?null:x.id)}><span className="service-index">{x.number} /</span><span className="service-title"><strong>{x.title}</strong><small>{x.desc}</small></span><span className="round-control">{expanded===x.id?'−':'+'}</span></button><div className="service-reveal"><div className="service-inner"><p>{x.details}</p><div className="service-tags">{x.tags.map(t=><span key={t}>{t}</span>)}</div><a href="#calculator" onClick={()=>{setChosen(v=>v.includes(x.id)?v:[...v,x.id]);setStep(2)}}>Рассчитать проект <span>↗</span></a></div></div></article>)}</div></section>
  <section id="projects" className="content-section projects"><div className="section-top"><span className="eyebrow">02 / ИЗБРАННЫЕ ПРОЕКТЫ</span><h2>Идеи в<br/><em>действии.</em></h2><p>Открывайте кейсы прямо здесь: внутри — живые сайты, а не просто изображения.</p></div>
