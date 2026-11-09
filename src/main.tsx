@@ -40,16 +40,16 @@ function App(){
      const y=Math.round(visibleTop+(visibleBottom-visibleTop)*(.2+Math.random()*.6)-rect.top);
      const angles=24;
      const radius=90+Math.random()*45;
+     const w=Math.max(1,rect.width),h=Math.max(1,rect.height);
      const points=Array.from({length:angles},(_,i)=>{
        const angle=i/angles*Math.PI*2;
        const r=radius*(.74+Math.random()*.52);
-       return (x+Math.cos(angle)*r).toFixed(1)+','+(y+Math.sin(angle)*r).toFixed(1);
-     }).join(' ');
-     const w=Math.max(1,Math.ceil(rect.width)),h=Math.max(1,Math.ceil(rect.height));
-     const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'"><polygon points="'+points+'" fill="white"/></svg>';
-     const mask='url("data:image/svg+xml,'+encodeURIComponent(svg)+'")';
-     grid.style.webkitMaskImage=mask;
-     grid.style.maskImage=mask;
+       return ((x+Math.cos(angle)*r)/w*100).toFixed(3)+'% '+((y+Math.sin(angle)*r)/h*100).toFixed(3)+'%';
+     }).join(',');
+     grid.style.clipPath='polygon('+points+')';
+     grid.style.webkitClipPath='polygon('+points+')';
+     grid.style.webkitMaskImage='none';
+     grid.style.maskImage='none';
      grid.classList.remove('square-grid-pulse');
      void grid.offsetWidth;
      grid.classList.add('square-grid-pulse');
