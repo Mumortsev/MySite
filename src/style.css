@@ -226,3 +226,25 @@ html,body,#root{overflow-x:clip;overflow-y:visible;overscroll-behavior-y:auto}
 .site .content-zone>.ambient-background{opacity:.85}
 .site .content-zone>.content-section{background:transparent}
 @media(prefers-reduced-motion:reduce){.site .content-zone{animation:none}}
+
+/* Aurora Glow v4: broad luminous ribbons visible behind section content. */
+.site .content-zone{background:transparent!important;animation:none!important;isolation:isolate}
+.site .content-zone>.ambient-background{position:absolute!important;inset:0!important;z-index:0!important;opacity:1!important;overflow:hidden!important;pointer-events:none}
+.site .content-zone>.content-section{position:relative;z-index:1;background:transparent!important}
+.site.dark .content-zone>.ambient-background{background:linear-gradient(160deg,#090f17 0%,#101a2a 48%,#090f17 100%)!important}
+.site.light .content-zone>.ambient-background{background:linear-gradient(160deg,#e4e9ee 0%,#f2f5f8 50%,#e1e7ec 100%)!important}
+.content-zone>.ambient-background::before,.content-zone>.ambient-background::after{display:none!important}
+.aurora-beam{position:absolute;z-index:1;display:block;width:170%;height:650px;left:-35%;border-radius:50%;pointer-events:none;filter:blur(40px);transform-origin:center;will-change:transform;animation:aurora-drift-a 16s ease-in-out infinite alternate}
+.beam-one{top:2%;transform:rotate(-22deg)}
+.beam-two{top:34%;left:-10%;animation:aurora-drift-b 22s ease-in-out infinite alternate-reverse}
+.beam-three{top:68%;left:-42%;animation:aurora-drift-a 26s ease-in-out infinite alternate-reverse}
+.site.dark .beam-one{background:radial-gradient(ellipse at center,rgba(45,178,236,.62) 0%,rgba(50,112,221,.40) 30%,rgba(40,81,155,.16) 60%,transparent 76%)}
+.site.dark .beam-two{background:radial-gradient(ellipse at center,rgba(32,197,194,.46) 0%,rgba(60,111,204,.40) 32%,rgba(72,66,150,.17) 63%,transparent 78%)}
+.site.dark .beam-three{background:radial-gradient(ellipse at center,rgba(79,145,236,.55) 0%,rgba(43,193,198,.30) 39%,transparent 75%)}
+.site.light .beam-one{background:radial-gradient(ellipse at center,rgba(65,132,207,.53) 0%,rgba(121,177,221,.40) 34%,rgba(177,205,232,.22) 60%,transparent 78%)}
+.site.light .beam-two{background:radial-gradient(ellipse at center,rgba(72,156,184,.43) 0%,rgba(138,174,225,.40) 35%,transparent 76%)}
+.site.light .beam-three{background:radial-gradient(ellipse at center,rgba(97,132,199,.48) 0%,rgba(137,190,213,.34) 38%,transparent 78%)}
+@keyframes aurora-drift-a{0%{transform:translate3d(-13%,0,0) rotate(-24deg) scale(.86)}50%{transform:translate3d(11%,-8%,0) rotate(-7deg) scale(1.12)}100%{transform:translate3d(-3%,12%,0) rotate(-30deg) scale(.95)}}
+@keyframes aurora-drift-b{0%{transform:translate3d(15%,-10%,0) rotate(18deg) scale(1)}50%{transform:translate3d(-12%,5%,0) rotate(-12deg) scale(1.18)}100%{transform:translate3d(9%,10%,0) rotate(25deg) scale(.88)}}
+@media(max-width:680px){.aurora-beam{width:240%;left:-75%;height:700px;filter:blur(36px)}.beam-two{left:-60%}.beam-three{left:-95%}}
+@media(prefers-reduced-motion:reduce){.aurora-beam{animation:none!important;will-change:auto}}
