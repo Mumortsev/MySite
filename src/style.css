@@ -455,3 +455,30 @@ html,body,#root{overflow-x:clip;overflow-y:visible;overscroll-behavior-y:auto}
 @media(prefers-reduced-motion:reduce){
  .site .content-zone>.membrane-touch{display:block!important}
 }
+
+/* Reliable image-based glitch: real uploaded textures, no canvas or async drawing. */
+.site .content-zone>.membrane-touch{
+ position:fixed!important;left:50%;top:50%;width:235px!important;height:235px!important;
+ z-index:50!important;display:block!important;overflow:hidden!important;
+ visibility:hidden!important;opacity:0!important;
+ transform:translate(-50%,-50%)!important;
+ border:0!important;border-radius:0!important;
+ transition:none!important;pointer-events:none!important;
+ background-image:url('/MySite/images/file_000000005a9082119456f21e2afbf013.png')!important;
+ background-size:500px auto!important;background-repeat:no-repeat!important;
+ box-shadow:none!important;filter:none!important;
+}
+.site.dark .content-zone>.membrane-touch{
+ background-image:url('/MySite/images/file_00000000937082119635bc4d1c5a581a.png')!important;
+}
+.site .content-zone>.membrane-touch.chip-active{
+ visibility:visible!important;
+ animation:chip-impact-reveal 3s ease-in-out forwards!important;
+}
+.site .content-zone>.membrane-touch .membrane-lines{display:none!important}
+@keyframes chip-impact-reveal{
+ 0%{opacity:0}14%{opacity:.95}45%{opacity:.95}72%{opacity:.78}100%{opacity:0}
+}
+@media(prefers-reduced-motion:reduce){
+ .site .content-zone>.membrane-touch.chip-active{animation:chip-impact-reveal 3s ease-in-out forwards!important}
+}
