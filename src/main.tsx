@@ -42,7 +42,7 @@ function App(){
  <div className="hero-foot"><span>ДВА ВАРИАНТА · ОДНА ЭСТЕТИКА</span><a href="#services">ЛИСТАЙТЕ ВНИЗ ↓</a></div>
  </section>
  <div className="content-zone">
- <iframe key={rainUrl} className="rain-effect" src={rainUrl} title="Цифровой дождь — фон следующих разделов" tabIndex={-1}/>
+ <div className="rain-layer" aria-hidden="true"><iframe key={rainUrl} className="rain-effect" src={rainUrl} title="Цифровой дождь — фон следующих разделов" tabIndex={-1}/></div>
  <div className="rain-tint"/>
  <section id="services" className="content-section services"><div className="section-top"><span className="eyebrow">01 / НАШИ НАПРАВЛЕНИЯ</span><h2>Идеи становятся<br/><em>реальностью.</em></h2><p>От первой концепции до готового продукта — эстетика, функциональность и современные технологии.</p></div><div className="service-grid">{cards.map(c=><article className="service-card" key={c.number}><span className="card-number">{c.number} /</span><h3>{c.title}</h3><p>{c.desc}</p><span className="card-arrow" aria-hidden="true">↗</span></article>)}</div></section>
  <section id="approach" className="content-section approach"><div className="eyebrow">02 / НАШ ПОДХОД</div><h2>Не просто код.<br/><em>Впечатление.</em></h2><p>Внимание к деталям, адаптивность и плавная анимация — не дополнительные опции, а часть каждого проекта.</p><div className="approach-tags"><span>ДИЗАЙН</span><span>ТЕХНОЛОГИИ</span><span>ДВИЖЕНИЕ</span></div></section>
