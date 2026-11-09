@@ -26,57 +26,143 @@ const stages=[['01','Знакомство','Разбираемся в задач
 function App(){
  const heroFrame=useRef<HTMLIFrameElement>(null);
  const zoneRef=useRef<HTMLDivElement>(null);
- const auroraRef=useRef<HTMLDivElement>(null);
- 
+ const membraneRef=useRef<HTMLDivElement>(null);
+ const meshCanvas=useRef<HTMLCanvasElement>(null);
  useEffect(()=>{
+   const canvas=meshCanvas.current;
    const zone=zoneRef.current;
-   const aurora=auroraRef.current;
-   if(!zone||!aurora)return;
-   let raf=0, timer=0, first=0;
-   let running=false;
-   const clear=()=>{
-     aurora.style.webkitMaskImage='none';
-     aurora.style.maskImage='none';
+   const layer=membraneRef.current;
+   if(!canvas||!zone||!layer)return;
+   const ctx=canvas.getContext('2d');
+   if(!ctx)return;
+   const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+   if(reduced)return;
+   const size=720;
+   const dpr=Math.min(window.devicePixelRatio||1,2);
+   canvas.width=Math.round(size*dpr);canvas.height=Math.round(size*dpr);
+   ctx.setTransform(dpr,0,0,dpr,0,0);
+   let raf=0,interval=0,first=0,started=0;
+   let previousX=-1,previousY=-1;
+   const smooth=(x:number)=>{const v=Math.max(0,Math.min(1,x));return v*v*(3-2*v)};
+   let seed=0,rotation=0;
+   const hash=(n:number)=>{const v=Math.sin(n*127.1+seed*311.7)*43758.5453;return v-Math.floor(v)};
+   type Trace={points:[number,number][],id:number,pad:boolean};
+   let traces:Trace[]=[];
+   const generateTraces=()=>{
+     const next:Trace[]=[];
+     const center=size/2;
+     for(let i=0;i<35;i++){
+       const x=center-105+hash(i*7+1)*210;
+       const y=center-105+hash(i*7+2)*210;
+       const dir=Math.floor(hash(i*7+3)*4);
+       const length=18+hash(i*7+4)*40;
+       const turn=10+hash(i*7+5)*22;
+       const sx=dir===0?1:dir===1?-1:0;
+       const sy=dir===2?1:dir===3?-1:0;
+       const bend=hash(i*7+6)>.45;
+       const points:[number,number][]=[[x,y],[x+sx*length,y+sy*length]];
+       if(bend)points.push([x+sx*length+(sy!==0?turn:0),y+sy*length+(sx!==0?turn:0)]);
+       next.push({points,id:i,pad:hash(i*7+8)>.58});
+     }
+     traces=next;
+   };
+   const draw=(now:number)=>{
+     const t=Math.min((now-started)/2900,1);
+     ctx.clearRect(0,0,size,size);
+     const dark=zone.closest('.dark')!==null;
+     const center=size/2;
+     ctx.strokeStyle=dark?'rgba(144,207,240,.78)':'rgba(56,112,156,.72)';
+     ctx.fillStyle=dark?'rgba(144,207,240,.78)':'rgba(56,112,156,.72)';
+     ctx.lineWidth=1.1;
+     const patch=(x:number,y:number)=>{
+       const dx=x-center,dy=y-center;
+       const angle=Math.atan2(dy,dx)+rotation;
+       const irregular=1+.24*Math.sin(angle*3+seed)+.13*Math.sin(angle*5-seed*1.7)+.09*Math.cos(angle*9+seed*2.3);
+       const radius=(77+17*hash(91))*irregular;
+       const distance=Math.hypot(dx*1.11,dy*.93);
+       return {inside:smooth((radius-distance)/13),normalized:distance/Math.max(1,radius)};
+     };
+     const visibility=(x:number,y:number,id:number)=>{
+       const p=patch(x,y);
+       if(p.inside<.015)return 0;
+       const delay=.045+p.normalized*.22+.14*hash(id+3);
+       const local=(t-delay)/(.19+.11*hash(id+9));
+       if(local<=0)return 0;
+       const reveal=smooth(local/.68);
+       const fade=1-smooth((local-1.08)/1.08);
+       return p.inside*reveal*fade*(.33+.42*hash(id+13));
+     };
+     // Individual routed PCB traces are revealed through the irregular damage,
+     // not warped or rendered as a rectangular circuit-board image.
+     for(const trace of traces){
+       if(hash(trace.id+27)<.13)continue;
+       const pts=trace.points;
+       for(let j=1;j<pts.length;j++){
+         const [ax,ay]=pts[j-1],[bx,by]=pts[j];
+         const length=Math.hypot(bx-ax,by-ay);
+         const steps=Math.max(1,Math.ceil(length/5));
+         for(let k=0;k<steps;k++){
+           const u=k/steps,v=(k+1)/steps;
+           const x1=ax+(bx-ax)*u,y1=ay+(by-ay)*u;
+           const x2=ax+(bx-ax)*v,y2=ay+(by-ay)*v;
+           const alpha=visibility((x1+x2)/2,(y1+y2)/2,trace.id*5+j);
+           if(alpha<.02)continue;
+           ctx.globalAlpha=alpha;
+           ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+         }
+       }
+       const [px,py]=pts[pts.length-1];
+       const alpha=visibility(px,py,trace.id*5+3);
+       if(alpha>.03&&trace.pad){
+         ctx.globalAlpha=alpha;
+         ctx.beginPath();ctx.arc(px,py,1.8,0,Math.PI*2);ctx.fill();
+       }
+     }
+     // A few restrained component footprints, never a dominant chip icon.
+     for(let i=0;i<4;i++){
+       const x=center-69+hash(i+220)*138,y=center-63+hash(i+230)*126;
+       const alpha=visibility(x,y,400+i);
+       if(alpha<.03)continue;
+       ctx.globalAlpha=alpha*.65;
+       const w=8+Math.floor(hash(i+240)*3)*4,h=6+Math.floor(hash(i+250)*3)*3;
+       ctx.strokeRect(x-w/2,y-h/2,w,h);
+       ctx.beginPath();
+       ctx.moveTo(x-w/2-3,y-h/4);ctx.lineTo(x-w/2,y-h/4);
+       ctx.moveTo(x+w/2,y+h/4);ctx.lineTo(x+w/2+3,y+h/4);
+       ctx.stroke();
+     }
+     ctx.globalAlpha=1;
+     if(t<1&&document.visibilityState==='visible')raf=requestAnimationFrame(draw);
+     else{raf=0;layer.classList.remove('visible');ctx.clearRect(0,0,size,size)}
    };
    const pulse=()=>{
-     if(running||document.hidden)return;
+     if(document.visibilityState!=='visible'||raf)return;
      const rect=zone.getBoundingClientRect();
-     const top=Math.max(0,rect.top);
-     const bottom=Math.min(innerHeight,rect.bottom);
-     if(bottom-top<100)return;
-     const w=Math.max(1,Math.round(rect.width)),h=Math.max(1,Math.round(rect.height));
-     const x=Math.round((.18+Math.random()*.64)*w);
-     const y=Math.round(top+(bottom-top)*(.2+Math.random()*.6)-rect.top);
-     const base=75+Math.random()*35;
-     const offsets=Array.from({length:23},()=>.75+Math.random()*.5);
-     const angle=Math.random()*Math.PI*2;
-     running=true;
-     const started=performance.now();
-     const frame=(now:number)=>{
-       const t=Math.min(1,(now-started)/3000);
-       const expand=Math.min(1,t/.22);
-       const contract=t>.58?Math.max(0,1-(t-.58)/.42):1;
-       const radius=base*expand*contract;
-       if(radius>1){
-         const points=offsets.map((v,i)=>{
-           const a=i/offsets.length*Math.PI*2+angle;
-           return (x+Math.cos(a)*radius*v).toFixed(1)+','+(y+Math.sin(a)*radius*v).toFixed(1);
-         }).join(' ');
-         const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'"><rect width="100%" height="100%" fill="white"/><polygon points="'+points+'" fill="black"/></svg>';
-         const mask='url("data:image/svg+xml,'+encodeURIComponent(svg)+'")';
-         aurora.style.webkitMaskImage=mask;
-         aurora.style.maskImage=mask;
-         aurora.style.webkitMaskSize='100% 100%';
-         aurora.style.maskSize='100% 100%';
-       }else clear();
-       if(t<1)raf=requestAnimationFrame(frame);
-       else{running=false;raf=0;clear()}
-     };
-     raf=requestAnimationFrame(frame);
+     const top=Math.max(rect.top,0),bottom=Math.min(rect.bottom,window.innerHeight);
+     if(bottom<=top+80)return;
+     const viewportWidth=window.innerWidth;
+     const visibleHeight=bottom-top;
+     let x=viewportWidth*(.18+Math.random()*.64);
+     let y=top+visibleHeight*(.18+Math.random()*.64);
+     if(previousX>=0&&Math.hypot(x-previousX,y-previousY)<Math.min(160,viewportWidth*.3)){
+       x=viewportWidth-x;
+       y=top+bottom-y;
+     }
+     previousX=x;previousY=y;
+     seed=Math.random()*10;
+     rotation=Math.random()*Math.PI*2;
+     generateTraces();
+     layer.style.left=(x-rect.left)+'px';
+     layer.style.top=(y-rect.top)+'px';
+     layer.classList.add('visible');
+     started=performance.now();
+     raf=requestAnimationFrame(draw);
    };
-   first=window.setTimeout(pulse,1000);
-   timer=window.setInterval(pulse,5000);
-   return()=>{clearTimeout(first);clearInterval(timer);if(raf)cancelAnimationFrame(raf);clear()};
+   first=window.setTimeout(pulse,1400);
+   interval=window.setInterval(pulse,5000);
+   const onVisibility=()=>{if(document.hidden){if(raf)cancelAnimationFrame(raf);raf=0;layer.classList.remove('visible');ctx.clearRect(0,0,size,size)}};
+   document.addEventListener('visibilitychange',onVisibility);
+   return()=>{window.clearTimeout(first);window.clearInterval(interval);document.removeEventListener('visibilitychange',onVisibility);if(raf)cancelAnimationFrame(raf)};
  },[]);
   const touchX=useRef<number|null>(null);
  const gesture=(x:number,y:number,dx:number)=>heroFrame.current?.contentWindow?.postMessage({type:'cm-gesture',x,y,dx},'*');
@@ -114,8 +200,8 @@ function App(){
  <div className="hero-foot"><span>ТЕХНОЛОГИИ · ДИЗАЙН · ДВИЖЕНИЕ</span><a href="#services">ЛИСТАЙТЕ ВНИЗ ↓</a></div>
  </section>
  <div className="content-zone" ref={zoneRef}>
- <div className="ambient-background" ref={auroraRef} aria-hidden="true"><div className="aurora-field"/><div className="aurora-veil"/></div>
-  <section id="services" className="content-section services"><div className="section-top"><span className="eyebrow">01 / ЭКСПЕРТИЗА</span><h2>Делаем сложное<br/><em>простым.</em></h2><p>Выберите направление — карточка раскроется и покажет, что входит в работу.</p></div>
+ <div className="ambient-background" aria-hidden="true"><div className="aurora-field"/><div className="aurora-veil"/></div>
+ <div className="membrane-touch" ref={membraneRef} aria-hidden="true"><canvas className="membrane-lines" ref={meshCanvas}/></div>\n <section id="services" className="content-section services"><div className="section-top"><span className="eyebrow">01 / ЭКСПЕРТИЗА</span><h2>Делаем сложное<br/><em>простым.</em></h2><p>Выберите направление — карточка раскроется и покажет, что входит в работу.</p></div>
  <div className="service-stack">{services.map(x=><article key={x.id} className={'service-expand '+(expanded===x.id?'is-open':'')}><button className="service-head" aria-expanded={expanded===x.id} onClick={()=>setExpanded(v=>v===x.id?null:x.id)}><span className="service-index">{x.number} /</span><span className="service-title"><strong>{x.title}</strong><small>{x.desc}</small></span><span className="round-control">{expanded===x.id?'−':'+'}</span></button><div className="service-reveal"><div className="service-inner"><p>{x.details}</p><div className="service-tags">{x.tags.map(t=><span key={t}>{t}</span>)}</div><a href="#calculator" onClick={()=>{setChosen(v=>v.includes(x.id)?v:[...v,x.id]);setStep(2)}}>Рассчитать проект <span>↗</span></a></div></div></article>)}</div></section>
  <section id="projects" className="content-section projects"><div className="section-top"><span className="eyebrow">02 / ИЗБРАННЫЕ ПРОЕКТЫ</span><h2>Идеи в<br/><em>действии.</em></h2><p>Открывайте кейсы прямо здесь: внутри — живые сайты, а не просто изображения.</p></div>
  <div className="project-grid">{[...projects,...customProjects].map((x,i)=><button key={x.id} className={'project-card project-'+x.color} onClick={()=>{setDevice('desktop');setProject(x)}}><div className="project-preview"><span className="project-glow"/><span className="preview-browser"><i/><i/><i/><span>{x.name}</span></span><span className="preview-word">{x.name}</span><span className="preview-lines"><b/><b/><b/></span></div><span className="project-bottom"><span><small>{x.type}</small><strong>{x.name}</strong><em>{x.description}</em></span><span className="round-control">↗</span></span></button>)}</div>
