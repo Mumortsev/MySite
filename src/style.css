@@ -411,3 +411,13 @@ html,body,#root{overflow-x:clip;overflow-y:visible;overscroll-behavior-y:auto}
 .site.dark .membrane-warp{background:radial-gradient(circle,rgba(4,13,28,.36) 0%,rgba(14,41,72,.27) 31%,rgba(61,158,220,.13) 55%,transparent 75%)}
 .site.light .membrane-warp{background:radial-gradient(circle,rgba(96,136,176,.17) 0%,rgba(153,190,222,.17) 35%,rgba(255,255,255,.23) 56%,transparent 75%)}
 @media(prefers-reduced-motion:reduce){.site .content-zone>.membrane-touch{transition:none!important}}
+
+/* Membrane v3 — slower pressure and organic release, no circular sticker edge. */
+.site .content-zone>.membrane-touch{border-radius:0!important;transform:translate(-50%,-50%) scale(.96)!important;transition:opacity 1.25s ease,visibility 0s linear 1.25s!important}
+.site .content-zone>.membrane-touch.visible{transform:translate(-50%,-50%) scale(1)!important;transition:opacity .55s ease,visibility 0s!important}
+.site .content-zone>.membrane-touch.pressed{transform:translate(-50%,-50%) scale(1)!important}
+.membrane-touch .membrane-warp,.membrane-touch .membrane-highlight{border-radius:43% 57% 51% 49% / 53% 45% 55% 47%!important}
+.membrane-touch .membrane-warp{transition:transform .8s cubic-bezier(.18,.6,.2,1)!important}
+.membrane-touch .membrane-highlight{transition:opacity .85s ease,transform .9s cubic-bezier(.2,.6,.2,1)!important;box-shadow:none!important}
+.site.dark .membrane-warp{background:radial-gradient(ellipse 46% 51% at 49% 52%,rgba(4,13,28,.30),rgba(17,52,83,.17) 51%,transparent 100%)!important}
+.site.light .membrane-warp{background:radial-gradient(ellipse 46% 51% at 49% 52%,rgba(87,132,171,.15),rgba(153,190,222,.10) 51%,transparent 100%)!important}
