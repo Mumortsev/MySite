@@ -43,8 +43,8 @@ function App(){
    const draw=(now:number)=>{
      const dt=Math.min((now-last)/16.67,2);last=now;
      const target=membranePos.current.active?1:0;
-     velocity+=(target-strength)*.13*dt;
-     velocity*=Math.pow(.77,dt);
+     velocity+=(target-strength)*.026*dt;
+     velocity*=Math.pow(.88,dt);
      strength+=velocity*dt;
      if(Math.abs(strength)<.001&&!membranePos.current.active&&Math.abs(velocity)<.001){strength=0;velocity=0}
      ctx.clearRect(0,0,size,size);
@@ -52,10 +52,13 @@ function App(){
      const center=size/2;
      const displace=(x:number,y:number):[number,number]=>{
        const dx=x-center,dy=y-center,r=Math.hypot(dx,dy);
-       const gaussian=Math.exp(-(r*r)/(2*112*112));
-       const pinch=48*strength*gaussian;
+       const angle=Math.atan2(dy,dx);
+       const radius=116*(1+.10*Math.sin(angle*3+.4)+.065*Math.cos(angle*5-1.1));
+       const gaussian=Math.exp(-.5*Math.pow(r/radius,2));
+       const pinch=54*strength*gaussian;
        const fall=r<1?0:pinch/r;
-       return [x-dx*fall,y-dy*fall+13*strength*gaussian];
+       const shear=9*strength*gaussian;
+       return [x-dx*fall+shear*Math.sin(angle*2+.7),y-dy*fall+18*strength*gaussian+shear*.35*Math.cos(angle*3)];
      };
      const fade=ctx.createRadialGradient(center,center,18,center,center,171);
      fade.addColorStop(0,dark?'rgba(175,222,255,.85)':'rgba(43,99,145,.82)');
@@ -100,7 +103,7 @@ function App(){
    membraneRef.current?.classList.remove('pressed');
    membraneRef.current?.dispatchEvent(new Event('membrane-kick'));
    if(membraneTimer.current!==null)window.clearTimeout(membraneTimer.current);
-   membraneTimer.current=window.setTimeout(()=>membraneRef.current?.classList.remove('visible'),780);
+   membraneTimer.current=window.setTimeout(()=>membraneRef.current?.classList.remove('visible'),1850);
  };
  const membraneStart=(e:React.PointerEvent<HTMLDivElement>)=>{
    if(e.button!==0||e.target!==e.currentTarget && (e.target as HTMLElement).closest('button,a,input,label,textarea,select,.service-expand,.project-card,.calc-shell,.stage-panel,.stage-nav,.faq-list,.contact-panel,.section-top,.project-note'))return;
