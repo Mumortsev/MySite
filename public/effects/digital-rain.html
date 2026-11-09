@@ -3,6 +3,7 @@
 const canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d',{alpha:false});
 const params=new URLSearchParams(location.search),light=params.get('theme')==='light';
 const quality=Math.max(.45,Math.min(1,Number(params.get('quality'))||1)),fps=Math.max(15,Math.min(60,Number(params.get('fps'))||60));
+const plain=params.get('plain')==='1';
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const bg=light?'#f3f2ed':'#06100d',rain=light?'#386f60':'#338968',bright=light?'#125d4d':'#c0ffe0';
 const alphabet='0123456789アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン';
@@ -14,7 +15,7 @@ function resize(){
  canvas.width=Math.max(1,Math.round(w*dpr));canvas.height=Math.max(1,Math.round(h*dpr));ctx.setTransform(dpr,0,0,dpr,0,0);
  cell=Math.max(11,Math.min(17,Math.floor(w/31)));
  cols=Array.from({length:Math.ceil(w/cell)+1},(_,i)=>({x:i*cell,y:rnd(h),speed:25+rnd(80),length:6+Math.floor(rnd(13)),chars:Array.from({length:23},()=>alphabet[Math.floor(rnd(alphabet.length))])}));
- buildText();
+ if(!plain)buildText();
 }
 function buildText(){
  const off=document.createElement('canvas');off.width=Math.ceil(w/cell)+2;off.height=Math.ceil(h/cell)+2;const m=off.getContext('2d',{willReadFrequently:true});
@@ -51,14 +52,14 @@ function render(now){
  }
  // The slogan is rasterized once to a grid-aligned outline. Each lit cell is one rain glyph.
  ctx.font='700 '+Math.floor(cell*.88)+'px monospace';
- for(let i=0;i<outline.length;i++){const g=outline[i];const visibility=Math.sin(g.x*.35+g.y*.19)*.18+.82;if(reveal*visibility<Math.random()*.16)continue;
+ for(let i=0;i<(plain?0:outline.length);i++){const g=outline[i];const visibility=Math.sin(g.x*.35+g.y*.19)*.18+.82;if(reveal*visibility<Math.random()*.16)continue;
  ctx.fillStyle=light?'rgba(13,91,73,'+(reveal*.85)+')':'rgba(173,255,215,'+(reveal*(.82+.18*Math.sin(elapsed*1.4+g.phase)))+')';
  ctx.fillText(g.char,(g.x+.5)*cell,(g.y+.5)*cell);
  if(!reduced&&Math.random()<.0008)g.char=alphabet[Math.floor(rnd(alphabet.length))];
  }
  // Small Russian captions occupy exactly one glyph cell per Cyrillic character.
  ctx.font='600 '+Math.floor(cell*.88)+'px monospace';ctx.fillStyle=light?'rgba(17,85,69,.95)':'rgba(185,247,212,.9)';
- for(const t of smallText)ctx.fillText(t.char,(t.x+.5)*cell,(t.y+.5)*cell);
+ for(const t of (plain?[]:smallText))ctx.fillText(t.char,(t.x+.5)*cell,(t.y+.5)*cell);
 }
 window.addEventListener('resize',resize,{passive:true});resize();requestAnimationFrame(render);
 })();
