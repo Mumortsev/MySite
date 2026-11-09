@@ -48,7 +48,6 @@ function App(){
  const base=import.meta.env.BASE_URL;
  const q=useMemo(()=>new URLSearchParams({theme,quality:String(profile.quality),fps:String(profile.fps)}).toString(),[theme,profile]);
  const heroUrl=base+'effects/sequin-wave.html?'+q+'&palette=silver';
- const rainUrl=base+'effects/digital-rain.html?'+q+'&plain=1'+(theme==='light'?'&palette=silver':'&finish=graphite');
  return <div className={'site '+theme+' variant-sequin-wave palette-'+(theme==='dark'?'graphite':'silver')}>
  <header className="site-header"><a href="#top" className="logo" aria-label="CODE M — наверх">CODE<span>_</span>M<span>.</span></a>
  <nav className="header-links"><a href="#services">Услуги</a><a href="#projects">Кейсы</a><a href="#calculator">Калькулятор</a><a href="#contact">Контакты</a></nav>
@@ -62,9 +61,7 @@ function App(){
  <div className="hero-foot"><span>ТЕХНОЛОГИИ · ДИЗАЙН · ДВИЖЕНИЕ</span><a href="#services">ЛИСТАЙТЕ ВНИЗ ↓</a></div>
  </section>
  <div className="content-zone">
- <div className="rain-layer" aria-hidden="true"><iframe key={rainUrl} className="rain-effect" src={rainUrl} title="Цифровой дождь — фон следующих разделов" tabIndex={-1}/></div>
- <div className="rain-tint"/>
-
+ <div className="ambient-background" aria-hidden="true"><div className="ambient-orbit orbit-one"/><div className="ambient-orbit orbit-two"/><div className="ambient-core"/><div className="ambient-grid"/></div>
  <section id="services" className="content-section services"><div className="section-top"><span className="eyebrow">01 / ЭКСПЕРТИЗА</span><h2>Делаем сложное<br/><em>простым.</em></h2><p>Выберите направление — карточка раскроется и покажет, что входит в работу.</p></div>
  <div className="service-stack">{services.map(x=><article key={x.id} className={'service-expand '+(expanded===x.id?'is-open':'')}><button className="service-head" aria-expanded={expanded===x.id} onClick={()=>setExpanded(v=>v===x.id?null:x.id)}><span className="service-index">{x.number} /</span><span className="service-title"><strong>{x.title}</strong><small>{x.desc}</small></span><span className="round-control">{expanded===x.id?'−':'+'}</span></button><div className="service-reveal"><div className="service-inner"><p>{x.details}</p><div className="service-tags">{x.tags.map(t=><span key={t}>{t}</span>)}</div><a href="#calculator" onClick={()=>{setChosen(v=>v.includes(x.id)?v:[...v,x.id]);setStep(2)}}>Рассчитать проект <span>↗</span></a></div></div></article>)}</div></section>
  <section id="projects" className="content-section projects"><div className="section-top"><span className="eyebrow">02 / ИЗБРАННЫЕ ПРОЕКТЫ</span><h2>Идеи в<br/><em>действии.</em></h2><p>Открывайте кейсы прямо здесь: внутри — живые сайты, а не просто изображения.</p></div>
