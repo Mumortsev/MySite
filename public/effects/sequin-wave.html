@@ -414,6 +414,7 @@
     if (!paused) lastTime = 0;
   });
 
+  window.addEventListener('message',function(e){if(e.source!==parent)return;if(e.data&&e.data.type==='cm-gesture'){mouseXVal=e.data.x<0?-1:e.data.x*dpr;mouseYVal=e.data.y<0?-1:(canvas.clientHeight-e.data.y)*dpr;}});
   // ── PostMessage API ──
   window.addEventListener('message', function(e) {
     if (e.data && e.data.type === 'param') {
