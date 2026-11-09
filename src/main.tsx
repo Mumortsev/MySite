@@ -28,104 +28,79 @@ function App(){
  const zoneRef=useRef<HTMLDivElement>(null);
  const membraneRef=useRef<HTMLDivElement>(null);
  const meshCanvas=useRef<HTMLCanvasElement>(null);
- const membranePos=useRef({x:0,y:0,active:false});
- const membraneRaf=useRef<number|null>(null);
- const membraneTimer=useRef<number|null>(null);
  useEffect(()=>{
    const canvas=meshCanvas.current;
-   if(!canvas)return;
+   const zone=zoneRef.current;
+   const layer=membraneRef.current;
+   if(!canvas||!zone||!layer)return;
    const ctx=canvas.getContext('2d');
    if(!ctx)return;
-   const size=360,dpr=Math.min(window.devicePixelRatio||1,2);
+   const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+   if(reduced)return;
+   const size=720;
+   const dpr=Math.min(window.devicePixelRatio||1,2);
    canvas.width=Math.round(size*dpr);canvas.height=Math.round(size*dpr);
    ctx.setTransform(dpr,0,0,dpr,0,0);
-   let strength=0,velocity=0,raf=0,last=performance.now();
+   let raf=0,interval=0,first=0,started=0;
+   const smooth=(x:number)=>{const v=Math.max(0,Math.min(1,x));return v*v*(3-2*v)};
    const draw=(now:number)=>{
-     const dt=Math.min((now-last)/16.67,2);last=now;
-     const target=membranePos.current.active?1:0;
-     velocity+=(target-strength)*.026*dt;
-     velocity*=Math.pow(.88,dt);
-     strength+=velocity*dt;
-     if(Math.abs(strength)<.001&&!membranePos.current.active&&Math.abs(velocity)<.001){strength=0;velocity=0}
+     const t=Math.min((now-started)/3300,1);
+     const progress=smooth(t);
+     const envelope=smooth(t/.26)*(1-smooth((t-.68)/.32));
      ctx.clearRect(0,0,size,size);
-     const dark=document.documentElement.dataset.theme==='dark';
+     const dark=getComputedStyle(zone).getPropertyValue('--bg').trim().startsWith('#0a')||zone.closest('.dark')!==null;
      const center=size/2;
+     const radius=progress*490;
      const displace=(x:number,y:number):[number,number]=>{
        const dx=x-center,dy=y-center,r=Math.hypot(dx,dy);
        const angle=Math.atan2(dy,dx);
-       const radius=116*(1+.10*Math.sin(angle*3+.4)+.065*Math.cos(angle*5-1.1));
-       const gaussian=Math.exp(-.5*Math.pow(r/radius,2));
-       const pinch=54*strength*gaussian;
-       const fall=r<1?0:pinch/r;
-       const shear=9*strength*gaussian;
-       return [x-dx*fall+shear*Math.sin(angle*2+.7),y-dy*fall+18*strength*gaussian+shear*.35*Math.cos(angle*3)];
+       const irregular=1+.045*Math.sin(angle*4+progress*2)+.03*Math.cos(angle*7-progress);
+       const distance=r-radius*irregular;
+       const band=Math.exp(-Math.pow(distance/105,2));
+       const pull=25*envelope*band;
+       const factor=r>1?pull/r:0;
+       return [x-dx*factor+7*envelope*band*Math.sin(angle*3),y-dy*factor+8*envelope*band];
      };
-     const fade=ctx.createRadialGradient(center,center,18,center,center,171);
-     fade.addColorStop(0,dark?'rgba(175,222,255,.85)':'rgba(43,99,145,.82)');
-     fade.addColorStop(.58,dark?'rgba(132,198,244,.52)':'rgba(63,119,162,.43)');
+     const fade=ctx.createRadialGradient(center,center,0,center,center,350);
+     fade.addColorStop(0,dark?'rgba(162,214,251,.53)':'rgba(54,107,151,.48)');
+     fade.addColorStop(.65,dark?'rgba(127,191,238,.36)':'rgba(72,131,170,.31)');
      fade.addColorStop(1,'rgba(100,170,210,0)');
-     ctx.strokeStyle=fade;
-     ctx.lineWidth=1.15;
-     ctx.globalAlpha=Math.max(0,Math.min(1,strength));
-     for(let x=0;x<=size;x+=19){
+     ctx.strokeStyle=fade;ctx.lineWidth=1;
+     ctx.globalAlpha=Math.min(.8,envelope*.86);
+     for(let x=0;x<=size;x+=25){
        ctx.beginPath();
-       for(let y=0;y<=size;y+=6){const [px,py]=displace(x,y);if(y===0)ctx.moveTo(px,py);else ctx.lineTo(px,py)}
+       for(let y=0;y<=size;y+=8){const [px,py]=displace(x,y);if(y===0)ctx.moveTo(px,py);else ctx.lineTo(px,py)}
        ctx.stroke();
      }
-     for(let y=0;y<=size;y+=19){
+     for(let y=0;y<=size;y+=25){
        ctx.beginPath();
-       for(let x=0;x<=size;x+=6){const [px,py]=displace(x,y);if(x===0)ctx.moveTo(px,py);else ctx.lineTo(px,py)}
+       for(let x=0;x<=size;x+=8){const [px,py]=displace(x,y);if(x===0)ctx.moveTo(px,py);else ctx.lineTo(px,py)}
        ctx.stroke();
      }
      ctx.globalAlpha=1;
-     if(strength!==0||membranePos.current.active)raf=requestAnimationFrame(draw);
-     else raf=0;
+     if(t<1&&document.visibilityState==='visible')raf=requestAnimationFrame(draw);
+     else{raf=0;layer.classList.remove('visible');ctx.clearRect(0,0,size,size)}
    };
-   const kick=()=>{if(!raf){last=performance.now();raf=requestAnimationFrame(draw)}};
-   const membrane=membraneRef.current;
-   membrane?.addEventListener('membrane-kick',kick);
-   return()=>{membrane?.removeEventListener('membrane-kick',kick);if(raf)cancelAnimationFrame(raf)};
+   const pulse=()=>{
+     if(document.visibilityState!=='visible'||raf)return;
+     const rect=zone.getBoundingClientRect();
+     const top=Math.max(rect.top,0),bottom=Math.min(rect.bottom,window.innerHeight);
+     if(bottom<=top+80)return;
+     const x=window.innerWidth/2;
+     const y=(top+bottom)/2;
+     layer.style.left=(x-rect.left)+'px';
+     layer.style.top=(y-rect.top)+'px';
+     layer.classList.add('visible');
+     started=performance.now();
+     raf=requestAnimationFrame(draw);
+   };
+   first=window.setTimeout(pulse,1400);
+   interval=window.setInterval(pulse,10000);
+   const onVisibility=()=>{if(document.hidden){if(raf)cancelAnimationFrame(raf);raf=0;layer.classList.remove('visible');ctx.clearRect(0,0,size,size)}};
+   document.addEventListener('visibilitychange',onVisibility);
+   return()=>{window.clearTimeout(first);window.clearInterval(interval);document.removeEventListener('visibilitychange',onVisibility);if(raf)cancelAnimationFrame(raf)};
  },[]);
- const membranePoint=(clientX:number,clientY:number)=>{
-   const zone=zoneRef.current,membrane=membraneRef.current;
-   if(!zone||!membrane)return;
-   const r=zone.getBoundingClientRect();
-   membranePos.current.x=clientX-r.left;membranePos.current.y=clientY-r.top;
-   if(membraneRaf.current!==null)return;
-   membraneRaf.current=requestAnimationFrame(()=>{
-     membraneRaf.current=null;
-     const {x,y}=membranePos.current;
-     membrane.style.left=x+'px';membrane.style.top=y+'px';
-   });
- };
- const membraneEnd=()=>{
-   membranePos.current.active=false;
-   membraneRef.current?.classList.remove('pressed');
-   membraneRef.current?.dispatchEvent(new Event('membrane-kick'));
-   if(membraneTimer.current!==null)window.clearTimeout(membraneTimer.current);
-   membraneTimer.current=window.setTimeout(()=>membraneRef.current?.classList.remove('visible'),1850);
- };
- const membraneStart=(e:React.PointerEvent<HTMLDivElement>)=>{
-   if(e.button!==0||e.target!==e.currentTarget && (e.target as HTMLElement).closest('button,a,input,label,textarea,select,.service-expand,.project-card,.calc-shell,.stage-panel,.stage-nav,.faq-list,.contact-panel,.section-top,.project-note'))return;
-   const zone=zoneRef.current;
-   if(!zone)return;
-   const rect=zone.getBoundingClientRect();
-   const el=document.elementFromPoint(e.clientX,e.clientY);
-   if(el?.closest('button,a,input,label,textarea,select,[role="dialog"]'))return;
-   if(e.clientY<rect.top||e.clientY>rect.bottom)return;
-   if(membraneTimer.current!==null)window.clearTimeout(membraneTimer.current);
-   membranePos.current.active=true;
-   membranePoint(e.clientX,e.clientY);
-   membraneRef.current?.classList.add('visible','pressed');
-   membraneRef.current?.dispatchEvent(new Event('membrane-kick'));
- };
- useEffect(()=>{
-   window.addEventListener('pointerup',membraneEnd);
-   window.addEventListener('pointercancel',membraneEnd);
-   return()=>{window.removeEventListener('pointerup',membraneEnd);window.removeEventListener('pointercancel',membraneEnd);if(membraneRaf.current!==null)cancelAnimationFrame(membraneRaf.current);if(membraneTimer.current!==null)clearTimeout(membraneTimer.current)};
- },[]);
- 
- const touchX=useRef<number|null>(null);
+  const touchX=useRef<number|null>(null);
  const gesture=(x:number,y:number,dx:number)=>heroFrame.current?.contentWindow?.postMessage({type:'cm-gesture',x,y,dx},'*');
  const[theme,setTheme]=useState<Theme>(()=>{const saved=localStorage.getItem('cm-theme');return saved==='dark'||saved==='light'?saved:matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'});
  const[profile,setProfile]=useState<Profile>(getProfile);
@@ -160,9 +135,9 @@ function App(){
  <div className="hero-copy"><div className="eyebrow"><span className="live-dot"/> ЦИФРОВАЯ СТУДИЯ / CODE_M</div><h1>ЗА ГРАНЬЮ<br/><em>КОДА.</em></h1><p>Создаём сайты, приложения и цифровые продукты, в которых технологии встречаются с дизайном.</p><a className="primary-cta" href="#services">Исследовать возможности <span>↗</span></a></div>
  <div className="hero-foot"><span>ТЕХНОЛОГИИ · ДИЗАЙН · ДВИЖЕНИЕ</span><a href="#services">ЛИСТАЙТЕ ВНИЗ ↓</a></div>
  </section>
- <div className="content-zone" ref={zoneRef} onPointerDown={membraneStart} onPointerMove={e=>{if(membranePos.current.active)membranePoint(e.clientX,e.clientY)}}>
+ <div className="content-zone" ref={zoneRef}>
  <div className="ambient-background" aria-hidden="true"><div className="aurora-field"/><div className="aurora-veil"/></div>
- <div className="membrane-touch" ref={membraneRef} aria-hidden="true"><div className="membrane-warp"/><canvas className="membrane-lines" ref={meshCanvas} aria-hidden="true"/><div className="membrane-highlight"/></div>\n <section id="services" className="content-section services"><div className="section-top"><span className="eyebrow">01 / ЭКСПЕРТИЗА</span><h2>Делаем сложное<br/><em>простым.</em></h2><p>Выберите направление — карточка раскроется и покажет, что входит в работу.</p></div>
+ <div className="membrane-touch" ref={membraneRef} aria-hidden="true"><canvas className="membrane-lines" ref={meshCanvas}/></div>\n <section id="services" className="content-section services"><div className="section-top"><span className="eyebrow">01 / ЭКСПЕРТИЗА</span><h2>Делаем сложное<br/><em>простым.</em></h2><p>Выберите направление — карточка раскроется и покажет, что входит в работу.</p></div>
  <div className="service-stack">{services.map(x=><article key={x.id} className={'service-expand '+(expanded===x.id?'is-open':'')}><button className="service-head" aria-expanded={expanded===x.id} onClick={()=>setExpanded(v=>v===x.id?null:x.id)}><span className="service-index">{x.number} /</span><span className="service-title"><strong>{x.title}</strong><small>{x.desc}</small></span><span className="round-control">{expanded===x.id?'−':'+'}</span></button><div className="service-reveal"><div className="service-inner"><p>{x.details}</p><div className="service-tags">{x.tags.map(t=><span key={t}>{t}</span>)}</div><a href="#calculator" onClick={()=>{setChosen(v=>v.includes(x.id)?v:[...v,x.id]);setStep(2)}}>Рассчитать проект <span>↗</span></a></div></div></article>)}</div></section>
  <section id="projects" className="content-section projects"><div className="section-top"><span className="eyebrow">02 / ИЗБРАННЫЕ ПРОЕКТЫ</span><h2>Идеи в<br/><em>действии.</em></h2><p>Открывайте кейсы прямо здесь: внутри — живые сайты, а не просто изображения.</p></div>
  <div className="project-grid">{[...projects,...customProjects].map((x,i)=><button key={x.id} className={'project-card project-'+x.color} onClick={()=>{setDevice('desktop');setProject(x)}}><div className="project-preview"><span className="project-glow"/><span className="preview-browser"><i/><i/><i/><span>{x.name}</span></span><span className="preview-word">{x.name}</span><span className="preview-lines"><b/><b/><b/></span></div><span className="project-bottom"><span><small>{x.type}</small><strong>{x.name}</strong><em>{x.description}</em></span><span className="round-control">↗</span></span></button>)}</div>
