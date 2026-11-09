@@ -50,9 +50,10 @@ function App(){
      grid.style.webkitClipPath='polygon('+points+')';
      grid.style.webkitMaskImage='none';
      grid.style.maskImage='none';
-     grid.classList.remove('square-grid-pulse');
+     grid.classList.remove('square-grid-visible');
      void grid.offsetWidth;
-     grid.classList.add('square-grid-pulse');
+     grid.classList.add('square-grid-visible');
+     window.setTimeout(()=>grid.classList.remove('square-grid-visible'),2200);
    };
    const first=window.setTimeout(pulse,900);
    const timer=window.setInterval(pulse,5000);
