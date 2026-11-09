@@ -457,3 +457,25 @@ body>.grid-reveal-overlay.grid-reveal-active{
  visibility:visible!important;animation:grid-reveal-pulse 3s ease-in-out forwards!important;
 }
 @keyframes grid-reveal-pulse{0%{opacity:0}18%{opacity:.85}53%{opacity:.85}100%{opacity:0}}
+
+/* Restored original 09523c square Aurora mesh, with localized irregular reveals. */
+.site .content-zone>.ambient-background .aurora-mesh{
+ position:absolute!important;inset:0!important;z-index:3!important;
+ display:block!important;pointer-events:none!important;
+ background-image:linear-gradient(90deg,var(--mesh-line) 1px,transparent 1px),linear-gradient(0deg,var(--mesh-line) 1px,transparent 1px)!important;
+ background-size:42px 42px!important;background-position:center top!important;
+ opacity:0!important;animation:none!important;
+ -webkit-mask-repeat:no-repeat!important;mask-repeat:no-repeat!important;
+ -webkit-mask-size:100% 100%!important;mask-size:100% 100%!important;
+}
+.site.dark{--mesh-line:rgba(166,209,241,.65)}
+.site.light{--mesh-line:rgba(76,122,155,.60)}
+.site .content-zone>.ambient-background .aurora-mesh.square-grid-pulse{
+ animation:cm-original-grid-pulse 3s ease-in-out forwards!important;
+}
+@keyframes cm-original-grid-pulse{
+ 0%{opacity:0}20%{opacity:.9}56%{opacity:.9}100%{opacity:0}
+}
+@media(max-width:680px){
+ .site .content-zone>.ambient-background .aurora-mesh{background-size:34px 34px!important}
+}
