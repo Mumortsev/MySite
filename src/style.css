@@ -281,3 +281,18 @@ html,body,#root{overflow-x:clip;overflow-y:visible;overscroll-behavior-y:auto}
 @keyframes cm-aurora-contained{0%{transform:translate3d(-8%,2%,0) scale(.92)}50%{transform:translate3d(8%,-5%,0) scale(1.05)}100%{transform:translate3d(0%,4%,0) scale(.96)}}
 @media(max-width:680px){.site .content-zone>.ambient-background .aurora-beam{width:230%!important;left:-75%!important;height:560px!important}.site .content-zone>.ambient-background .beam-two{left:-50%!important}.site .content-zone>.ambient-background .beam-three{left:-85%!important}}
 @media(prefers-reduced-motion:reduce){.site .content-zone>.ambient-background .aurora-beam{animation:none!important}}
+
+/* Aurora Flow v5: ONE uninterrupted luminous field, no independent glow blobs. */
+.site .hero{z-index:2!important}
+.site .hero::after{height:clamp(150px,24vh,300px)!important;background:linear-gradient(to top,var(--bg) 0%,color-mix(in srgb,var(--bg) 88%,transparent) 22%,transparent 100%)!important}
+.site .content-zone{position:relative!important;isolation:isolate!important;overflow:hidden!important;z-index:1!important;background:var(--bg)!important}
+.site .content-zone>.ambient-background{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;z-index:0!important;overflow:hidden!important;opacity:1!important;background:var(--bg)!important}
+.site .content-zone>.ambient-background .aurora-field{position:absolute;inset:-5% -55%;height:110%;width:210%;z-index:1;transform-origin:center;background-size:100% 100%;filter:blur(32px);animation:cm-aurora-flow 11s ease-in-out infinite alternate;will-change:transform,filter}
+.site.dark .content-zone>.ambient-background .aurora-field{background:repeating-linear-gradient(116deg,transparent 0%,rgba(37,89,145,.06) 9%,rgba(50,150,208,.42) 17%,rgba(64,123,199,.28) 23%,rgba(28,44,86,.06) 31%,transparent 43%,rgba(36,128,165,.30) 53%,rgba(66,163,197,.43) 59%,rgba(58,88,159,.20) 67%,transparent 80%)}
+.site.light .content-zone>.ambient-background .aurora-field{background:repeating-linear-gradient(116deg,transparent 0%,rgba(110,147,184,.07) 9%,rgba(108,170,216,.40) 17%,rgba(171,203,230,.32) 23%,rgba(255,255,255,.10) 31%,transparent 43%,rgba(107,160,194,.28) 53%,rgba(122,177,219,.40) 59%,rgba(192,211,233,.27) 67%,transparent 80%)}
+.site .content-zone>.ambient-background .aurora-veil{position:absolute;inset:0;z-index:2;background:linear-gradient(to bottom,var(--bg) 0%,transparent 4%,transparent 94%,var(--bg) 100%);pointer-events:none}
+.site .content-zone>.content-section{position:relative!important;z-index:1!important;background:transparent!important}
+.site .content-zone>.ambient-background .aurora-beam{display:none!important}
+@keyframes cm-aurora-flow{0%{transform:translate3d(-14%,0,0) skewX(-5deg) scaleX(.84);filter:blur(44px)}50%{transform:translate3d(3%,0,0) skewX(5deg) scaleX(1.05);filter:blur(30px)}100%{transform:translate3d(15%,0,0) skewX(-3deg) scaleX(.9);filter:blur(42px)}}
+@media(max-width:680px){.site .content-zone>.ambient-background .aurora-field{inset:-3% -95%;width:290%;height:106%;filter:blur(22px);animation-duration:9s}.site .hero::after{height:190px!important}}
+@media(prefers-reduced-motion:reduce){.site .content-zone>.ambient-background .aurora-field{animation:none!important;will-change:auto}}
