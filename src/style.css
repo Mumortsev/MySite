@@ -421,3 +421,20 @@ html,body,#root{overflow-x:clip;overflow-y:visible;overscroll-behavior-y:auto}
 .membrane-touch .membrane-highlight{transition:opacity .85s ease,transform .9s cubic-bezier(.2,.6,.2,1)!important;box-shadow:none!important}
 .site.dark .membrane-warp{background:radial-gradient(ellipse 46% 51% at 49% 52%,rgba(4,13,28,.30),rgba(17,52,83,.17) 51%,transparent 100%)!important}
 .site.light .membrane-warp{background:radial-gradient(ellipse 46% 51% at 49% 52%,rgba(87,132,171,.15),rgba(153,190,222,.10) 51%,transparent 100%)!important}
+
+/* Aurora pulse: a viewport-centered, autonomous, non-interactive lattice. */
+.site .content-zone>.membrane-touch,
+.site .content-zone>.membrane-touch.visible{
+ width:720px!important;height:720px!important;
+ border:0!important;border-radius:0!important;
+ transform:translate(-50%,-50%)!important;
+ transition:none!important;
+ opacity:0!important;visibility:hidden!important;
+ pointer-events:none!important;
+}
+.site .content-zone>.membrane-touch.visible{opacity:1!important;visibility:visible!important}
+.site .content-zone>.membrane-touch .membrane-lines{
+ position:absolute;inset:0;width:720px;height:720px;
+ filter:none!important;opacity:1;pointer-events:none;
+}
+@media(prefers-reduced-motion:reduce){.site .content-zone>.membrane-touch{display:none!important}}
