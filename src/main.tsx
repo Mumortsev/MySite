@@ -45,43 +45,71 @@ function App(){
    let previousX=-1,previousY=-1;
    const smooth=(x:number)=>{const v=Math.max(0,Math.min(1,x));return v*v*(3-2*v)};
    let seed=0,rotation=0;
-   // Actual photographed silicon die, public domain (Martijn Boer / Wikimedia Commons).
-   // https://commons.wikimedia.org/wiki/File:Freescale_MPC8245_integrated_processor_die_shot.jpg
-   const die=new Image();
-   let dieReady=false;
-   die.onload=()=>{dieReady=true};
-   die.src='https://commons.wikimedia.org/wiki/Special:FilePath/Freescale_MPC8245_integrated_processor_die_shot.jpg?width=640';
+   // Pre-render a dense silicon-die image once. No network image requests.
+   const dieCanvas=document.createElement('canvas');
+   dieCanvas.width=dieCanvas.height=512;
+   const dc=dieCanvas.getContext('2d');
+   if(dc){
+     const rng=(n:number)=>{const v=Math.sin(n*93.71+17.9)*43758.5453;return v-Math.floor(v)};
+     const bg=dc.createLinearGradient(0,0,512,512);
+     bg.addColorStop(0,'#0b2634');bg.addColorStop(.5,'#173c4c');bg.addColorStop(1,'#081c2c');
+     dc.fillStyle=bg;dc.fillRect(0,0,512,512);
+     // Repeating metallization layers and densely packed rectangular functional blocks.
+     for(let by=0;by<8;by++)for(let bx=0;bx<8;bx++){
+       const x=bx*64,y=by*64,id=by*8+bx;
+       dc.fillStyle=rng(id+1)>.5?'#24495a':'#163544';
+       dc.fillRect(x+2,y+2,60,60);
+       const horizontal=rng(id+70)>.48;
+       dc.strokeStyle=rng(id+100)>.5?'rgba(154,203,209,.46)':'rgba(83,168,179,.52)';
+       dc.lineWidth=.7;
+       for(let k=0;k<23;k++){
+         const q=5+k*2.4;
+         dc.beginPath();
+         if(horizontal){dc.moveTo(x+5,y+q);dc.lineTo(x+59,y+q)}
+         else{dc.moveTo(x+q,y+5);dc.lineTo(x+q,y+59)}
+         dc.stroke();
+       }
+       for(let k=0;k<6;k++){
+         dc.fillStyle='rgba(193,223,217,.24)';
+         dc.fillRect(x+6+(k%3)*19,y+8+Math.floor(k/3)*34,2,3);
+       }
+       dc.strokeStyle='rgba(178,210,206,.30)';dc.strokeRect(x+2.5,y+2.5,59,59);
+     }
+     // Higher-level metal routing, pads and vias overlay the dense transistor cells.
+     for(let i=0;i<90;i++){
+       const x=rng(i*7+1)*512,y=rng(i*7+2)*512;
+       const dx=(rng(i*7+3)>.5?1:-1)*(15+rng(i*7+4)*80);
+       const dy=(rng(i*7+5)>.5?1:-1)*(8+rng(i*7+6)*44);
+       dc.strokeStyle=i%3===0?'rgba(205,217,193,.42)':'rgba(90,184,198,.34)';
+       dc.lineWidth=i%7===0?2.5:1.2;
+       dc.beginPath();dc.moveTo(x,y);dc.lineTo(x+dx,y);dc.lineTo(x+dx,y+dy);dc.stroke();
+       dc.fillStyle='rgba(204,224,211,.46)';dc.fillRect(x+dx-1.5,y+dy-1.5,3,3);
+     }
+   }
    const draw=(now:number)=>{
      const t=Math.min((now-started)/2900,1);
      ctx.clearRect(0,0,size,size);
-     if(dieReady){
-       const center=size/2;
-       const reveal=Math.min(1,Math.max(0,(t-.04)/.24));
-       const dissolve=1-Math.min(1,Math.max(0,(t-.56)/.35));
-       const opacity=Math.min(1,reveal*2)*dissolve;
-       if(opacity>.001){
-         ctx.save();
-         // Tear-shaped, uneven impact mask. It never exposes a rectangular photograph.
-         const points=22;
-         ctx.beginPath();
-         for(let i=0;i<=points;i++){
-           const angle=i/points*Math.PI*2;
-           const edge=(76+hash(91)*18)*(1+.22*Math.sin(angle*3+seed)+.15*Math.cos(angle*5-seed*1.7)+.08*Math.sin(angle*9+seed));
-           const spread=.62+.38*reveal;
-           const x=center+Math.cos(angle+rotation)*edge*spread;
-           const y=center+Math.sin(angle+rotation)*edge*.87*spread;
-           if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
-         }
-         ctx.closePath();ctx.clip();
-         ctx.globalAlpha=opacity*.67;
-         // Crop into the real die so the reveal feels like a window into circuitry,
-         // not a complete square chip pasted onto the Aurora background.
-         const crop=210;
-         const sx=Math.max(0,(die.naturalWidth-crop)*(.18+.62*hash(31)));
-         const sy=Math.max(0,(die.naturalHeight-crop)*(.18+.62*hash(32)));
-         ctx.drawImage(die,sx,sy,Math.min(crop,die.naturalWidth-sx),Math.min(crop,die.naturalHeight-sy),center-126,center-126,252,252);
-         ctx.restore();
+     const center=size/2;
+     const reveal=smooth((t-.03)/.27);
+     const dissolve=1-smooth((t-.60)/.33);
+     const opacity=reveal*dissolve;
+     if(opacity>.001){
+       ctx.save();
+       ctx.beginPath();
+       const points=28;
+       for(let i=0;i<=points;i++){
+         const angle=i/points*Math.PI*2;
+         const edge=(78+hash(91)*17)*(1+.23*Math.sin(angle*3+seed)+.14*Math.cos(angle*5-seed*1.7)+.09*Math.sin(angle*9+seed));
+         const spread=.56+.44*reveal;
+         const x=center+Math.cos(angle+rotation)*edge*spread;
+         const y=center+Math.sin(angle+rotation)*edge*.90*spread;
+         if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
        }
+       ctx.closePath();ctx.clip();
+       ctx.globalAlpha=opacity*(zone.closest('.dark')?.82:.55);
+       const sx=80+hash(31)*170,sy=80+hash(32)*170;
+       ctx.drawImage(dieCanvas,sx,sy,240,240,center-130,center-130,260,260);
+       ctx.restore();
      }
      if(t<1&&document.visibilityState==='visible')raf=requestAnimationFrame(draw);
      else{raf=0;layer.classList.remove('visible');ctx.clearRect(0,0,size,size)}
