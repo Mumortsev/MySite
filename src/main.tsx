@@ -2,9 +2,7 @@ import React,{useEffect,useMemo,useRef,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import './style.css';
 
-type Variant='vertigo'|'sequin-wave';
 type Theme='dark'|'light';
-type WavePalette='emerald'|'ice'|'amethyst'|'gold'|'silver';
 type Profile={quality:number;fps:number;label:string};
 function getProfile():Profile{
  const n=navigator as Navigator & {deviceMemory?:number;connection?:{saveData?:boolean}};
@@ -20,32 +18,29 @@ const cards=[
  {number:'04',title:'Дизайн и анимация',desc:'Визуальные системы с характером, движением и вниманием к деталям.'}
 ];
 function App(){
- const[variant,setVariant]=useState<Variant>('vertigo');
  const heroFrame=useRef<HTMLIFrameElement>(null);
  const touchX=useRef<number|null>(null);
  const gesture=(x:number,y:number,dx:number)=>heroFrame.current?.contentWindow?.postMessage({type:'cm-gesture',x,y,dx},'*');
  const[theme,setTheme]=useState<Theme>(()=>{const saved=localStorage.getItem('cm-theme');return saved==='dark'||saved==='light'?saved:matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'});
- const[wavePalette,setWavePalette]=useState<WavePalette>(()=>{const v=localStorage.getItem('cm-wave-palette');return v==='ice'||v==='amethyst'||v==='gold'||v==='silver'?v:'emerald'});
  const[profile,setProfile]=useState<Profile>(getProfile);
  const[menu,setMenu]=useState(false);
- useEffect(()=>{localStorage.setItem('cm-wave-palette',wavePalette)},[wavePalette]);
  useEffect(()=>{document.documentElement.dataset.theme=theme;localStorage.setItem('cm-theme',theme)},[theme]);
  useEffect(()=>{const handler=()=>setProfile(getProfile());window.addEventListener('resize',handler);return()=>window.removeEventListener('resize',handler)},[]);
  const base=import.meta.env.BASE_URL;
  const q=useMemo(()=>new URLSearchParams({theme,quality:String(profile.quality),fps:String(profile.fps)}).toString(),[theme,profile]);
- const heroUrl=base+'effects/'+variant+'.html?'+q+(variant==='sequin-wave'?'&palette='+wavePalette:'');
- const rainUrl=base+'effects/digital-rain.html?'+q+'&plain=1'+(variant==='sequin-wave'?(theme==='light'?'&palette='+wavePalette:'&finish=graphite'):'');
- return <div className={'site '+theme+' variant-'+variant+' palette-'+(variant==='sequin-wave'?(theme==='dark'?'graphite':wavePalette):'default')}>
+ const heroUrl=base+'effects/sequin-wave.html?'+q+'&palette=silver';
+ const rainUrl=base+'effects/digital-rain.html?'+q+'&plain=1'+(theme==='light'?'&palette=silver':'&finish=graphite');
+ return <div className={'site '+theme+' variant-sequin-wave palette-'+(theme==='dark'?'graphite':'silver')}>
  <header className="site-header"><a href="#top" className="logo" aria-label="CODE M — наверх">CODE<span>_</span>M<span>.</span></a>
  <nav className="header-links"><a href="#services">Услуги</a><a href="#approach">Подход</a><a href="#contact">Контакты</a></nav>
- <div className="header-controls"><div className="variant-toggle" role="group" aria-label="Эффект первого экрана"><button className={variant==='vertigo'?'active':''} onClick={()=>setVariant('vertigo')}>VERTIGO</button><button className={variant==='sequin-wave'?'active':''} onClick={()=>setVariant('sequin-wave')}>SEQUIN WAVE</button></div>{variant==='sequin-wave'&&theme==='light'&&<div className="palette-toggle" role="group" aria-label="Цвет Sequin Wave"><button className={wavePalette==='emerald'?'active':''} onClick={()=>setWavePalette('emerald')} title="Изумрудный титан"><span className="palette-dot emerald"/>Изумруд</button><button className={wavePalette==='ice'?'active':''} onClick={()=>setWavePalette('ice')} title="Ледяной титан"><span className="palette-dot ice"/>Ледяной</button><button className={wavePalette==='amethyst'?'active':''} onClick={()=>setWavePalette('amethyst')} title="Аметистовый хром"><span className="palette-dot amethyst"/>Аметист</button><button className={wavePalette==='gold'?'active':''} onClick={()=>setWavePalette('gold')} title="Золотая подложка процессора"><span className="palette-dot gold"/>Золото</button><button className={wavePalette==='silver'?'active':''} onClick={()=>setWavePalette('silver')} title="Шлифованный алюминий"><span className="palette-dot silver"/>Металл</button></div>}<button className="theme-toggle" onClick={()=>setTheme(t=>t==='dark'?'light':'dark')} aria-label="Переключить тему">{theme==='dark'?'☀':'☾'}<span>{theme==='dark'?'Светлая':'Тёмная'}</span></button><button className="menu-toggle" aria-label="Открыть меню" onClick={()=>setMenu(x=>!x)}>☰</button></div></header>
+ <div className="header-controls"><button className="theme-toggle" onClick={()=>setTheme(t=>t==='dark'?'light':'dark')} aria-label="Переключить тему">{theme==='dark'?'☀':'☾'}<span>{theme==='dark'?'Светлая':'Тёмная'}</span></button><button className="menu-toggle" aria-label="Открыть меню" onClick={()=>setMenu(x=>!x)}>☰</button></div></header>
  {menu&&<nav className="mobile-menu"><a onClick={()=>setMenu(false)} href="#services">Услуги</a><a onClick={()=>setMenu(false)} href="#approach">Подход</a><a onClick={()=>setMenu(false)} href="#contact">Контакты</a></nav>}
  <main id="top">
  <section className="hero" aria-label="Первый экран" onTouchStart={e=>{touchX.current=e.touches[0]?.clientX??null;gesture(e.touches[0]?.clientX??0,e.touches[0]?.clientY??0,0)}} onTouchMove={e=>{const t=e.touches[0];if(!t)return;gesture(t.clientX,t.clientY,touchX.current===null?0:t.clientX-touchX.current);touchX.current=t.clientX}} onTouchEnd={()=>{touchX.current=null;gesture(-1,-1,0)}}>
- <iframe ref={heroFrame} key={heroUrl} className="hero-effect" src={heroUrl} title={'Анимация '+variant} tabIndex={-1}/>
+ <iframe ref={heroFrame} key={heroUrl} className="hero-effect" src={heroUrl} title="Анимация Sequin Wave" tabIndex={-1}/>
  <div className="hero-shade"/>
  <div className="hero-copy"><div className="eyebrow"><span className="live-dot"/> ЦИФРОВАЯ СТУДИЯ / CODE_M</div><h1>ЗА ГРАНЬЮ<br/><em>КОДА.</em></h1><p>Создаём сайты, приложения и цифровые продукты, в которых технологии встречаются с дизайном.</p><a className="primary-cta" href="#services">Исследовать возможности <span>↗</span></a></div>
- <div className="hero-foot"><span>ДВА ВАРИАНТА · ОДНА ЭСТЕТИКА</span><a href="#services">ЛИСТАЙТЕ ВНИЗ ↓</a></div>
+ <div className="hero-foot"><span>ТЕХНОЛОГИИ · ДИЗАЙН · ДВИЖЕНИЕ</span><a href="#services">ЛИСТАЙТЕ ВНИЗ ↓</a></div>
  </section>
  <div className="content-zone">
  <div className="rain-layer" aria-hidden="true"><iframe key={rainUrl} className="rain-effect" src={rainUrl} title="Цифровой дождь — фон следующих разделов" tabIndex={-1}/></div>
