@@ -400,3 +400,14 @@ html,body,#root{overflow-x:clip;overflow-y:visible;overscroll-behavior-y:auto}
 .membrane-touch.pressed .membrane-highlight{opacity:1;transform:scale(1)}
 @media(hover:hover) and (pointer:fine){.site .content-zone>.membrane-touch{width:330px;height:330px}}
 @media(prefers-reduced-motion:reduce){.site .content-zone>.membrane-touch,.membrane-touch *{transition:none!important}}
+
+/* Aurora Membrane v2 — spring-deformed continuous lines, no star glyphs. */
+.site .content-zone>.membrane-touch{width:360px!important;height:360px!important;overflow:visible}
+.membrane-lines{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none;z-index:3;filter:drop-shadow(0 0 5px rgba(112,192,245,.24))}
+.membrane-touch .membrane-warp{z-index:1}
+.membrane-touch .membrane-highlight{z-index:2}
+.site .content-zone>.membrane-touch .membrane-stars{display:none!important}
+.site .content-zone>.membrane-touch.pressed .membrane-warp{transform:scale(.98)}
+.site.dark .membrane-warp{background:radial-gradient(circle,rgba(4,13,28,.36) 0%,rgba(14,41,72,.27) 31%,rgba(61,158,220,.13) 55%,transparent 75%)}
+.site.light .membrane-warp{background:radial-gradient(circle,rgba(96,136,176,.17) 0%,rgba(153,190,222,.17) 35%,rgba(255,255,255,.23) 56%,transparent 75%)}
+@media(prefers-reduced-motion:reduce){.site .content-zone>.membrane-touch{transition:none!important}}
