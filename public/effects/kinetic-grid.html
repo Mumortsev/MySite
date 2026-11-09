@@ -29,10 +29,21 @@
 <script>
 (function() {
   var canvas = document.getElementById('canvas');
+  // CODE_MUM: adaptive device profile, light/dark appearance, reduced motion.
+  var cmQuery = new URLSearchParams(location.search);
+  var cmLight = cmQuery.get('theme') === 'light';
+  var cmQuality = Math.max(0.45, Math.min(1, Number(cmQuery.get('quality')) || 1));
+  var cmFps = Math.max(15, Math.min(60, Number(cmQuery.get('fps')) || 60));
+  var cmLastFrame = -1;
+  document.documentElement.style.background = cmLight ? '#f3f2ed' : '#0a0a0a';
+  document.body.style.background = cmLight ? '#f3f2ed' : '#0a0a0a';
+  canvas.style.filter = cmLight ? 'invert(1) hue-rotate(180deg) saturate(.68)' : 'none';
+  document.querySelector('.label')?.remove();
+
   var ctx = canvas.getContext('2d');
   var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var dpr = Math.min(window.devicePixelRatio || 1, 2) * cmQuality;
   var W = 0;
   var H = 0;
   var running = true;
@@ -43,8 +54,8 @@
   var IMPULSE_STRENGTH = 1.0;
 
   // ── Grid dimensions ──
-  var COLS = 40;
-  var ROWS = 25;
+  var COLS = Math.max(17, Math.round(40 * cmQuality));
+  var ROWS = Math.max(12, Math.round(25 * cmQuality));
   var DAMPING = 0.978;
   var RETURN_FORCE = 0.003;
   var SPRING_K_BASE = 0.12;
@@ -122,7 +133,7 @@
   }
 
   function resize() {
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    dpr = Math.min(window.devicePixelRatio || 1, 2) * cmQuality;
     W = window.innerWidth;
     H = window.innerHeight;
     canvas.width = Math.round(W * dpr);
@@ -332,6 +343,8 @@
 
   // ── Render ──
   function render(now) {
+    if (cmLastFrame >= 0 && now - cmLastFrame < 1000 / cmFps - 1) { requestAnimationFrame(render); return; }
+    cmLastFrame = now;
     if (!running) { return; }
 
     var time = now * 0.001;
