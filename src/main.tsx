@@ -8,7 +8,7 @@ function App(){
  const choose=(i:number)=>{setIndex((i+effects.length)%effects.length);setMenu(false)};
  useEffect(()=>{const onKey=(e:KeyboardEvent)=>{if(e.key==='ArrowRight')choose(index+1);if(e.key==='ArrowLeft')choose(index-1);if(e.key==='Escape')setMenu(false)};window.addEventListener('keydown',onKey);return()=>window.removeEventListener('keydown',onKey)},[index]);
  return <main className={'lab'+(minimal?' minimal':'')} style={{'--accent': ['#9de6ce','#a5b7f4','#f4d5a3','#e5a8d4','#a8e8ee','#e5f3b2'][index%6]} as React.CSSProperties}>
- <iframe key={effect.id} className="original-effect" src={'/effects/'+effect.file} title={effect.title} allow="autoplay" loading="eager"/>
+ <iframe key={effect.id} className="original-effect" src={import.meta.env.BASE_URL+'effects/'+effect.file} title={effect.title} allow="autoplay" loading="eager"/>
  <div className="vignette"/>
  <header className="header"><div className="brand">CODE<span>_</span>MUM<span className="period">.</span></div><div className="header-right"><span>ORIGINAL EFFECTS / 50</span><button onClick={()=>setMinimal(!minimal)} aria-label={minimal?'Показать интерфейс':'Скрыть интерфейс'}>{minimal?'◩':'⊟'}</button></div></header>
  <section className="hero"><div className="eyebrow"><i/> DIGITAL MATERIAL EXPLORER</div><h1>Beyond<br/><em>the code.</em></h1><p>Выбирай эффект и взаимодействуй с пространством. Каждый фон — оригинальная реализация из открытого репозитория.</p><div className="hero-label"><span>{effect.title}</span><span>{String(index+1).padStart(2,'0')} / 50</span></div></section>
