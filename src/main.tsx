@@ -46,53 +46,90 @@ function App(){
    const smooth=(x:number)=>{const v=Math.max(0,Math.min(1,x));return v*v*(3-2*v)};
    let seed=0,rotation=0;
    const hash=(n:number)=>{const v=Math.sin(n*127.1+seed*311.7)*43758.5453;return v-Math.floor(v)};
+   type Trace={points:[number,number][],id:number,pad:boolean};
+   let traces:Trace[]=[];
+   const generateTraces=()=>{
+     const next:Trace[]=[];
+     const center=size/2;
+     for(let i=0;i<35;i++){
+       const x=center-105+hash(i*7+1)*210;
+       const y=center-105+hash(i*7+2)*210;
+       const dir=Math.floor(hash(i*7+3)*4);
+       const length=18+hash(i*7+4)*40;
+       const turn=10+hash(i*7+5)*22;
+       const sx=dir===0?1:dir===1?-1:0;
+       const sy=dir===2?1:dir===3?-1:0;
+       const bend=hash(i*7+6)>.45;
+       const points:[number,number][]=[[x,y],[x+sx*length,y+sy*length]];
+       if(bend)points.push([x+sx*length+(sy!==0?turn:0),y+sy*length+(sx!==0?turn:0)]);
+       next.push({points,id:i,pad:hash(i*7+8)>.58});
+     }
+     traces=next;
+   };
    const draw=(now:number)=>{
-     const t=Math.min((now-started)/2800,1);
+     const t=Math.min((now-started)/2900,1);
      ctx.clearRect(0,0,size,size);
      const dark=zone.closest('.dark')!==null;
      const center=size/2;
-     ctx.strokeStyle=dark?'rgba(137,199,238,.76)':'rgba(56,112,156,.70)';
-     ctx.lineWidth=.95;
-     const segment=(x:number,y:number,horizontal:boolean,index:number)=>{
-       const length=12;
-       const mx=x+(horizontal?length/2:0),my=y+(horizontal?0:length/2);
-       const dx=mx-center,dy=my-center;
+     ctx.strokeStyle=dark?'rgba(144,207,240,.78)':'rgba(56,112,156,.72)';
+     ctx.fillStyle=dark?'rgba(144,207,240,.78)':'rgba(56,112,156,.72)';
+     ctx.lineWidth=1.1;
+     const patch=(x:number,y:number)=>{
+       const dx=x-center,dy=y-center;
        const angle=Math.atan2(dy,dx)+rotation;
-       // A small, torn-edged patch, never a circle or full-screen grid.
-       const irregular=1+.23*Math.sin(angle*3+seed)+.14*Math.sin(angle*5-seed*1.7)+.09*Math.cos(angle*9+seed*2.3);
-       const distance=Math.hypot(dx*1.13,dy*.91);
-       const edge=(75+22*hash(91))*irregular;
-       const inside=smooth((edge-distance)/15);
-       if(inside<.025)return;
-       // Nearby detached shards and missing line fragments make the boundary broken.
-       const keep=hash(index+27);
-       if(keep<.20)return;
-       const normalized=Math.max(0,distance/Math.max(1,edge));
-       const delay=.06+normalized*.24+.19*hash(index+3);
-       const local=(t-delay)/(.19+.11*hash(index+9));
-       if(local<=0||local>=2.4)return;
-       const grow=smooth(local/.7);
-       const fade=1-smooth((local-1.05)/1.05);
-       const opacity=inside*grow*fade*(.28+.43*hash(index+13));
-       if(opacity<.014)return;
-       const visible=length*grow*(1-smooth((local-1.20)/.85));
-       if(visible<.35)return;
-       const outward=horizontal?(dx>=0?1:-1):(dy>=0?1:-1);
-       const from=outward>0?0:length-visible;
-       const to=outward>0?visible:length;
-       ctx.globalAlpha=opacity;
-       ctx.beginPath();
-       if(horizontal){ctx.moveTo(x+from,y);ctx.lineTo(x+to,y)}
-       else{ctx.moveTo(x,y+from);ctx.lineTo(x,y+to)}
-       ctx.stroke();
+       const irregular=1+.24*Math.sin(angle*3+seed)+.13*Math.sin(angle*5-seed*1.7)+.09*Math.cos(angle*9+seed*2.3);
+       const radius=(77+17*hash(91))*irregular;
+       const distance=Math.hypot(dx*1.11,dy*.93);
+       return {inside:smooth((radius-distance)/13),normalized:distance/Math.max(1,radius)};
      };
-     // Render only around the impact point: roughly 160–220 px across.
-     let index=0;
-     for(let y=center-130;y<=center+130;y+=22){
-       for(let x=center-130;x<=center+130;x+=12)segment(x,y,true,index++);
+     const visibility=(x:number,y:number,id:number)=>{
+       const p=patch(x,y);
+       if(p.inside<.015)return 0;
+       const delay=.045+p.normalized*.22+.14*hash(id+3);
+       const local=(t-delay)/(.19+.11*hash(id+9));
+       if(local<=0)return 0;
+       const reveal=smooth(local/.68);
+       const fade=1-smooth((local-1.08)/1.08);
+       return p.inside*reveal*fade*(.33+.42*hash(id+13));
+     };
+     // Individual routed PCB traces are revealed through the irregular damage,
+     // not warped or rendered as a rectangular circuit-board image.
+     for(const trace of traces){
+       if(hash(trace.id+27)<.13)continue;
+       const pts=trace.points;
+       for(let j=1;j<pts.length;j++){
+         const [ax,ay]=pts[j-1],[bx,by]=pts[j];
+         const length=Math.hypot(bx-ax,by-ay);
+         const steps=Math.max(1,Math.ceil(length/5));
+         for(let k=0;k<steps;k++){
+           const u=k/steps,v=(k+1)/steps;
+           const x1=ax+(bx-ax)*u,y1=ay+(by-ay)*u;
+           const x2=ax+(bx-ax)*v,y2=ay+(by-ay)*v;
+           const alpha=visibility((x1+x2)/2,(y1+y2)/2,trace.id*5+j);
+           if(alpha<.02)continue;
+           ctx.globalAlpha=alpha;
+           ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+         }
+       }
+       const [px,py]=pts[pts.length-1];
+       const alpha=visibility(px,py,trace.id*5+3);
+       if(alpha>.03&&trace.pad){
+         ctx.globalAlpha=alpha;
+         ctx.beginPath();ctx.arc(px,py,1.8,0,Math.PI*2);ctx.fill();
+       }
      }
-     for(let x=center-130;x<=center+130;x+=22){
-       for(let y=center-130;y<=center+130;y+=12)segment(x,y,false,index++);
+     // A few restrained component footprints, never a dominant chip icon.
+     for(let i=0;i<4;i++){
+       const x=center-69+hash(i+220)*138,y=center-63+hash(i+230)*126;
+       const alpha=visibility(x,y,400+i);
+       if(alpha<.03)continue;
+       ctx.globalAlpha=alpha*.65;
+       const w=8+Math.floor(hash(i+240)*3)*4,h=6+Math.floor(hash(i+250)*3)*3;
+       ctx.strokeRect(x-w/2,y-h/2,w,h);
+       ctx.beginPath();
+       ctx.moveTo(x-w/2-3,y-h/4);ctx.lineTo(x-w/2,y-h/4);
+       ctx.moveTo(x+w/2,y+h/4);ctx.lineTo(x+w/2+3,y+h/4);
+       ctx.stroke();
      }
      ctx.globalAlpha=1;
      if(t<1&&document.visibilityState==='visible')raf=requestAnimationFrame(draw);
@@ -114,6 +151,7 @@ function App(){
      previousX=x;previousY=y;
      seed=Math.random()*10;
      rotation=Math.random()*Math.PI*2;
+     generateTraces();
      layer.style.left=(x-rect.left)+'px';
      layer.style.top=(y-rect.top)+'px';
      layer.classList.add('visible');
