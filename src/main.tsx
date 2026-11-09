@@ -45,70 +45,37 @@ function App(){
    let previousX=-1,previousY=-1;
    const smooth=(x:number)=>{const v=Math.max(0,Math.min(1,x));return v*v*(3-2*v)};
    let seed=0,rotation=0;
-   // Pre-render a dense silicon-die image once. No network image requests.
-   const dieCanvas=document.createElement('canvas');
-   dieCanvas.width=dieCanvas.height=512;
-   const dc=dieCanvas.getContext('2d');
-   if(dc){
-     const rng=(n:number)=>{const v=Math.sin(n*93.71+17.9)*43758.5453;return v-Math.floor(v)};
-     const bg=dc.createLinearGradient(0,0,512,512);
-     bg.addColorStop(0,'#0b2634');bg.addColorStop(.5,'#173c4c');bg.addColorStop(1,'#081c2c');
-     dc.fillStyle=bg;dc.fillRect(0,0,512,512);
-     // Repeating metallization layers and densely packed rectangular functional blocks.
-     for(let by=0;by<8;by++)for(let bx=0;bx<8;bx++){
-       const x=bx*64,y=by*64,id=by*8+bx;
-       dc.fillStyle=rng(id+1)>.5?'#24495a':'#163544';
-       dc.fillRect(x+2,y+2,60,60);
-       const horizontal=rng(id+70)>.48;
-       dc.strokeStyle=rng(id+100)>.5?'rgba(154,203,209,.46)':'rgba(83,168,179,.52)';
-       dc.lineWidth=.7;
-       for(let k=0;k<23;k++){
-         const q=5+k*2.4;
-         dc.beginPath();
-         if(horizontal){dc.moveTo(x+5,y+q);dc.lineTo(x+59,y+q)}
-         else{dc.moveTo(x+q,y+5);dc.lineTo(x+q,y+59)}
-         dc.stroke();
-       }
-       for(let k=0;k<6;k++){
-         dc.fillStyle='rgba(193,223,217,.24)';
-         dc.fillRect(x+6+(k%3)*19,y+8+Math.floor(k/3)*34,2,3);
-       }
-       dc.strokeStyle='rgba(178,210,206,.30)';dc.strokeRect(x+2.5,y+2.5,59,59);
-     }
-     // Higher-level metal routing, pads and vias overlay the dense transistor cells.
-     for(let i=0;i<90;i++){
-       const x=rng(i*7+1)*512,y=rng(i*7+2)*512;
-       const dx=(rng(i*7+3)>.5?1:-1)*(15+rng(i*7+4)*80);
-       const dy=(rng(i*7+5)>.5?1:-1)*(8+rng(i*7+6)*44);
-       dc.strokeStyle=i%3===0?'rgba(205,217,193,.42)':'rgba(90,184,198,.34)';
-       dc.lineWidth=i%7===0?2.5:1.2;
-       dc.beginPath();dc.moveTo(x,y);dc.lineTo(x+dx,y);dc.lineTo(x+dx,y+dy);dc.stroke();
-       dc.fillStyle='rgba(204,224,211,.46)';dc.fillRect(x+dx-1.5,y+dy-1.5,3,3);
-     }
-   }
+   // Locally hosted, theme-specific, top-down microchip textures.
+   const chips={light:new Image(),dark:new Image()};
+   chips.light.src=import.meta.env.BASE_URL+'images/file_000000005a9082119456f21e2afbf013.png';
+   chips.dark.src=import.meta.env.BASE_URL+'images/file_00000000937082119635bc4d1c5a581a.png';
    const draw=(now:number)=>{
      const t=Math.min((now-started)/2900,1);
      ctx.clearRect(0,0,size,size);
      const center=size/2;
-     const reveal=smooth((t-.03)/.27);
-     const dissolve=1-smooth((t-.60)/.33);
+     const reveal=smooth((t-.03)/.26);
+     const dissolve=1-smooth((t-.61)/.31);
      const opacity=reveal*dissolve;
-     if(opacity>.001){
+     const dark=zone.closest('.dark')!==null;
+     const chip=dark?chips.dark:chips.light;
+     if(opacity>.001&&chip.complete&&chip.naturalWidth>0){
        ctx.save();
        ctx.beginPath();
        const points=28;
        for(let i=0;i<=points;i++){
          const angle=i/points*Math.PI*2;
-         const edge=(78+hash(91)*17)*(1+.23*Math.sin(angle*3+seed)+.14*Math.cos(angle*5-seed*1.7)+.09*Math.sin(angle*9+seed));
-         const spread=.56+.44*reveal;
+         const edge=(77+hash(91)*18)*(1+.23*Math.sin(angle*3+seed)+.14*Math.cos(angle*5-seed*1.7)+.09*Math.sin(angle*9+seed));
+         const spread=.58+.42*reveal;
          const x=center+Math.cos(angle+rotation)*edge*spread;
-         const y=center+Math.sin(angle+rotation)*edge*.90*spread;
+         const y=center+Math.sin(angle+rotation)*edge*.9*spread;
          if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
        }
        ctx.closePath();ctx.clip();
-       ctx.globalAlpha=opacity*(zone.closest('.dark')?.82:.55);
-       const sx=80+hash(31)*170,sy=80+hash(32)*170;
-       ctx.drawImage(dieCanvas,sx,sy,240,240,center-130,center-130,260,260);
+       ctx.globalAlpha=opacity*(dark?.82:.66);
+       const crop=Math.min(chip.naturalWidth,chip.naturalHeight)*.42;
+       const sx=(chip.naturalWidth-crop)*(.12+.76*hash(31));
+       const sy=(chip.naturalHeight-crop)*(.12+.76*hash(32));
+       ctx.drawImage(chip,sx,sy,crop,crop,center-132,center-132,264,264);
        ctx.restore();
      }
      if(t<1&&document.visibilityState==='visible')raf=requestAnimationFrame(draw);
