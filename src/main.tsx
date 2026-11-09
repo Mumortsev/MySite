@@ -36,7 +36,8 @@ function App(){
    const ctx=canvas.getContext('2d');
    if(!ctx)return;
    const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-   if(reduced)return;
+   // Keep the image reveal available; motion-reduced users see the same short fade.
+
    const size=720;
    const dpr=Math.min(window.devicePixelRatio||1,2);
    canvas.width=Math.round(size*dpr);canvas.height=Math.round(size*dpr);
@@ -71,7 +72,7 @@ function App(){
          if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
        }
        ctx.closePath();ctx.clip();
-       ctx.globalAlpha=opacity*(dark?.82:.66);
+       ctx.globalAlpha=opacity*(dark?.94:.92);
        const crop=Math.min(chip.naturalWidth,chip.naturalHeight)*.42;
        const sx=(chip.naturalWidth-crop)*(.12+.76*hash(31));
        const sy=(chip.naturalHeight-crop)*(.12+.76*hash(32));
