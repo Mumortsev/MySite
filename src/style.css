@@ -45,3 +45,11 @@ html,body,#root{overflow-x:clip;overflow-y:visible;overscroll-behavior-y:auto}
 .site.variant-sequin-wave .logo span,.site.variant-sequin-wave .live-dot{color:var(--accent)}
 .site.variant-sequin-wave .live-dot{background:var(--accent)}
 .site.variant-sequin-wave .service-card:hover{border-color:var(--accent)}
+
+/* Light gold finish inspired by the underside of a CPU package: champagne ceramic, brushed brass, dark bronze ink. */
+.site.light.variant-sequin-wave.palette-gold{
+ --bg:#f3ead8;--fg:#352719;--muted:#725c3c;--accent:#96601d;--glass:rgba(251,243,223,.88);--line:rgba(130,87,33,.28);--panel:rgba(252,242,218,.87);
+ --hero-overlay:linear-gradient(90deg,rgba(249,238,212,.95),rgba(249,238,212,.66) 56%,rgba(249,238,212,.07)),linear-gradient(0deg,#f3ead8,transparent 30%);
+}
+.palette-dot.gold{background:linear-gradient(135deg,#fff0b4,#c9922d 55%,#8a561a)}
+.site.light.variant-sequin-wave.palette-gold .palette-toggle button.active{color:#fff}
