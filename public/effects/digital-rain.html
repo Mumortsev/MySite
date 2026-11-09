@@ -4,6 +4,8 @@ const canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d',{alpha
 const params=new URLSearchParams(location.search),light=params.get('theme')==='light';
 const quality=Math.max(.45,Math.min(1,Number(params.get('quality'))||1)),fps=Math.max(15,Math.min(60,Number(params.get('fps'))||60));
 const plain=params.get('plain')==='1';
+const palette=params.get('palette')||'emerald';
+const rainRgb=light?(palette==='ice'?'45,112,184':palette==='amethyst'?'123,72,161':'15,111,77'):'93,203,215';
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const bg=light?'#f3f2ed':'#06100d',rain=light?'#386f60':'#338968',bright=light?'#125d4d':'#c0ffe0';
 const alphabet='0123456789アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン';
@@ -47,7 +49,7 @@ function render(now){
  for(let ci=0;ci<maxColumns;ci++){
  const c=cols[ci];if(!reduced)c.y+=c.speed*dt*(.55+quality*.45);if(c.y-c.length*cell>h)c.y=-rnd(h*.5);
  const count=Math.min(c.length,Math.ceil(c.y/cell)+1);
- for(let j=0;j<count;j++){const y=c.y-j*cell;if(y<0||y>h)continue;const alpha=(1-j/c.length)*(.36+.52*quality);ctx.fillStyle=light?'rgba(15,111,77,'+alpha+')':'rgba(93,255,166,'+alpha+')';ctx.fillText(c.chars[j%c.chars.length],c.x+cell/2,y)}
+ for(let j=0;j<count;j++){const y=c.y-j*cell;if(y<0||y>h)continue;const alpha=(1-j/c.length)*(.36+.52*quality);ctx.fillStyle='rgba('+rainRgb+','+alpha+')';ctx.fillText(c.chars[j%c.chars.length],c.x+cell/2,y)}
  if(!reduced&&Math.random()<.025)c.chars[Math.floor(rnd(c.chars.length))]=alphabet[Math.floor(rnd(alphabet.length))];
  }
  // The slogan is rasterized once to a grid-aligned outline. Each lit cell is one rain glyph.
