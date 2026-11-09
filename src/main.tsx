@@ -29,87 +29,40 @@ function App(){
  const membraneRef=useRef<HTMLDivElement>(null);
  const meshCanvas=useRef<HTMLCanvasElement>(null);
  useEffect(()=>{
-   const canvas=meshCanvas.current;
-   const zone=zoneRef.current;
    const layer=membraneRef.current;
-   if(!canvas||!zone||!layer)return;
-   const ctx=canvas.getContext('2d');
-   if(!ctx)return;
-   const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-   // Keep the image reveal available; motion-reduced users see the same short fade.
-
-   const size=720;
-   const dpr=Math.min(window.devicePixelRatio||1,2);
-   canvas.width=Math.round(size*dpr);canvas.height=Math.round(size*dpr);
-   ctx.setTransform(dpr,0,0,dpr,0,0);
-   let raf=0,interval=0,first=0,started=0;
-   let previousX=-1,previousY=-1;
-   const smooth=(x:number)=>{const v=Math.max(0,Math.min(1,x));return v*v*(3-2*v)};
-   let seed=0,rotation=0;
-   // Locally hosted, theme-specific, top-down microchip textures.
-   const chips={light:new Image(),dark:new Image()};
-   chips.light.src=import.meta.env.BASE_URL+'images/file_000000005a9082119456f21e2afbf013.png';
-   chips.dark.src=import.meta.env.BASE_URL+'images/file_00000000937082119635bc4d1c5a581a.png';
-   const draw=(now:number)=>{
-     const t=Math.min((now-started)/2900,1);
-     ctx.clearRect(0,0,size,size);
-     const center=size/2;
-     const reveal=smooth((t-.03)/.26);
-     const dissolve=1-smooth((t-.61)/.31);
-     const opacity=reveal*dissolve;
-     const dark=zone.closest('.dark')!==null;
-     const chip=dark?chips.dark:chips.light;
-     if(opacity>.001&&chip.complete&&chip.naturalWidth>0){
-       ctx.save();
-       ctx.beginPath();
-       const points=28;
-       for(let i=0;i<=points;i++){
-         const angle=i/points*Math.PI*2;
-         const edge=(77+hash(91)*18)*(1+.23*Math.sin(angle*3+seed)+.14*Math.cos(angle*5-seed*1.7)+.09*Math.sin(angle*9+seed));
-         const spread=.58+.42*reveal;
-         const x=center+Math.cos(angle+rotation)*edge*spread;
-         const y=center+Math.sin(angle+rotation)*edge*.9*spread;
-         if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
-       }
-       ctx.closePath();ctx.clip();
-       ctx.globalAlpha=opacity*(dark?.94:.92);
-       const crop=Math.min(chip.naturalWidth,chip.naturalHeight)*.42;
-       const sx=(chip.naturalWidth-crop)*(.12+.76*hash(31));
-       const sy=(chip.naturalHeight-crop)*(.12+.76*hash(32));
-       ctx.drawImage(chip,sx,sy,crop,crop,center-132,center-132,264,264);
-       ctx.restore();
-     }
-     if(t<1&&document.visibilityState==='visible')raf=requestAnimationFrame(draw);
-     else{raf=0;layer.classList.remove('visible');ctx.clearRect(0,0,size,size)}
-   };
+   const zone=zoneRef.current;
+   if(!layer||!zone)return;
+   let timer=0;
+   let lastX=-1,lastY=-1;
    const pulse=()=>{
-     if(document.visibilityState!=='visible'||raf)return;
-     const rect=zone.getBoundingClientRect();
-     const top=Math.max(rect.top,0),bottom=Math.min(rect.bottom,window.innerHeight);
-     if(bottom<=top+80)return;
-     const viewportWidth=window.innerWidth;
-     const visibleHeight=bottom-top;
-     let x=viewportWidth*(.18+Math.random()*.64);
-     let y=top+visibleHeight*(.18+Math.random()*.64);
-     if(previousX>=0&&Math.hypot(x-previousX,y-previousY)<Math.min(160,viewportWidth*.3)){
-       x=viewportWidth-x;
+     if(document.hidden)return;
+     const bounds=zone.getBoundingClientRect();
+     const top=Math.max(0,bounds.top),bottom=Math.min(window.innerHeight,bounds.bottom);
+     if(bottom-top<100)return;
+     let x=window.innerWidth*(.18+Math.random()*.64);
+     let y=top+(bottom-top)*(.20+Math.random()*.60);
+     if(lastX>=0&&Math.hypot(x-lastX,y-lastY)<130){
+       x=window.innerWidth-x;
        y=top+bottom-y;
      }
-     previousX=x;previousY=y;
-     seed=Math.random()*10;
-     rotation=Math.random()*Math.PI*2;
-
-     layer.style.left=(x-rect.left)+'px';
-     layer.style.top=(y-rect.top)+'px';
-     layer.classList.add('visible');
-     started=performance.now();
-     raf=requestAnimationFrame(draw);
+     lastX=x;lastY=y;
+     const radius=()=>Math.round(35+Math.random()*20);
+     const shape=Array.from({length:17},(_,i)=>{
+       const angle=(i/17)*Math.PI*2;
+       const r=radius();
+       return `${(50+Math.cos(angle)*r).toFixed(1)}% ${(50+Math.sin(angle)*r).toFixed(1)}%`;
+     }).join(',');
+     layer.style.left=x+'px';
+     layer.style.top=y+'px';
+     layer.style.clipPath='polygon('+shape+')';
+     layer.style.backgroundPosition=Math.round(Math.random()*100)+'% '+Math.round(Math.random()*100)+'%';
+     layer.classList.remove('chip-active');
+     void layer.offsetWidth;
+     layer.classList.add('chip-active');
    };
-   first=window.setTimeout(pulse,1400);
-   interval=window.setInterval(pulse,10000);
-   const onVisibility=()=>{if(document.hidden){if(raf)cancelAnimationFrame(raf);raf=0;layer.classList.remove('visible');ctx.clearRect(0,0,size,size)}};
-   document.addEventListener('visibilitychange',onVisibility);
-   return()=>{window.clearTimeout(first);window.clearInterval(interval);document.removeEventListener('visibilitychange',onVisibility);if(raf)cancelAnimationFrame(raf)};
+   const first=window.setTimeout(pulse,900);
+   timer=window.setInterval(pulse,5000);
+   return()=>{window.clearTimeout(first);window.clearInterval(timer)};
  },[]);
   const touchX=useRef<number|null>(null);
  const gesture=(x:number,y:number,dx:number)=>heroFrame.current?.contentWindow?.postMessage({type:'cm-gesture',x,y,dx},'*');
