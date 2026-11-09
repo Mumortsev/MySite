@@ -1,6 +1,5 @@
 import React,{useEffect,useMemo,useRef,useState} from 'react';
 import {createRoot} from 'react-dom/client';
-import {createPortal} from 'react-dom';
 import './style.css';
 
 type Theme='dark'|'light';
@@ -27,43 +26,57 @@ const stages=[['01','Знакомство','Разбираемся в задач
 function App(){
  const heroFrame=useRef<HTMLIFrameElement>(null);
  const zoneRef=useRef<HTMLDivElement>(null);
- const membraneRef=useRef<HTMLDivElement>(null);
+ const auroraRef=useRef<HTMLDivElement>(null);
  
  useEffect(()=>{
-   const layer=membraneRef.current;
    const zone=zoneRef.current;
-   if(!layer||!zone)return;
-   let timer=0;
-   let lastX=-1,lastY=-1;
-   const pulse=()=>{
-     if(document.hidden)return;
-     const bounds=zone.getBoundingClientRect();
-     const top=Math.max(0,bounds.top),bottom=Math.min(window.innerHeight,bounds.bottom);
-     if(bottom-top<100)return;
-     let x=window.innerWidth*(.18+Math.random()*.64);
-     let y=top+(bottom-top)*(.20+Math.random()*.60);
-     if(lastX>=0&&Math.hypot(x-lastX,y-lastY)<130){
-       x=window.innerWidth-x;
-       y=top+bottom-y;
-     }
-     lastX=x;lastY=y;
-     const radius=()=>Math.round(35+Math.random()*20);
-     const shape=Array.from({length:17},(_,i)=>{
-       const angle=(i/17)*Math.PI*2;
-       const r=radius();
-       return `${(50+Math.cos(angle)*r).toFixed(1)}% ${(50+Math.sin(angle)*r).toFixed(1)}%`;
-     }).join(',');
-     layer.style.left=x+'px';
-     layer.style.top=y+'px';
-     layer.style.clipPath='polygon('+shape+')';
-     layer.style.backgroundPosition=Math.round(Math.random()*100)+'% '+Math.round(Math.random()*100)+'%';
-     layer.classList.remove('chip-active');
-     void layer.offsetWidth;
-     layer.classList.add('chip-active');
+   const aurora=auroraRef.current;
+   if(!zone||!aurora)return;
+   let raf=0, timer=0, first=0;
+   let running=false;
+   const clear=()=>{
+     aurora.style.webkitMaskImage='none';
+     aurora.style.maskImage='none';
    };
-   const first=window.setTimeout(pulse,900);
+   const pulse=()=>{
+     if(running||document.hidden)return;
+     const rect=zone.getBoundingClientRect();
+     const top=Math.max(0,rect.top);
+     const bottom=Math.min(innerHeight,rect.bottom);
+     if(bottom-top<100)return;
+     const w=Math.max(1,Math.round(rect.width)),h=Math.max(1,Math.round(rect.height));
+     const x=Math.round((.18+Math.random()*.64)*w);
+     const y=Math.round(top+(bottom-top)*(.2+Math.random()*.6)-rect.top);
+     const base=75+Math.random()*35;
+     const offsets=Array.from({length:23},()=>.75+Math.random()*.5);
+     const angle=Math.random()*Math.PI*2;
+     running=true;
+     const started=performance.now();
+     const frame=(now:number)=>{
+       const t=Math.min(1,(now-started)/3000);
+       const expand=Math.min(1,t/.22);
+       const contract=t>.58?Math.max(0,1-(t-.58)/.42):1;
+       const radius=base*expand*contract;
+       if(radius>1){
+         const points=offsets.map((v,i)=>{
+           const a=i/offsets.length*Math.PI*2+angle;
+           return (x+Math.cos(a)*radius*v).toFixed(1)+','+(y+Math.sin(a)*radius*v).toFixed(1);
+         }).join(' ');
+         const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'"><rect width="100%" height="100%" fill="white"/><polygon points="'+points+'" fill="black"/></svg>';
+         const mask='url("data:image/svg+xml,'+encodeURIComponent(svg)+'")';
+         aurora.style.webkitMaskImage=mask;
+         aurora.style.maskImage=mask;
+         aurora.style.webkitMaskSize='100% 100%';
+         aurora.style.maskSize='100% 100%';
+       }else clear();
+       if(t<1)raf=requestAnimationFrame(frame);
+       else{running=false;raf=0;clear()}
+     };
+     raf=requestAnimationFrame(frame);
+   };
+   first=window.setTimeout(pulse,1000);
    timer=window.setInterval(pulse,5000);
-   return()=>{window.clearTimeout(first);window.clearInterval(timer)};
+   return()=>{clearTimeout(first);clearInterval(timer);if(raf)cancelAnimationFrame(raf);clear()};
  },[]);
   const touchX=useRef<number|null>(null);
  const gesture=(x:number,y:number,dx:number)=>heroFrame.current?.contentWindow?.postMessage({type:'cm-gesture',x,y,dx},'*');
@@ -100,9 +113,8 @@ function App(){
  <div className="hero-copy"><div className="eyebrow"><span className="live-dot"/> ЦИФРОВАЯ СТУДИЯ / CODE_M</div><h1>ЗА ГРАНЬЮ<br/><em>КОДА.</em></h1><p>Создаём сайты, приложения и цифровые продукты, в которых технологии встречаются с дизайном.</p><a className="primary-cta" href="#services">Исследовать возможности <span>↗</span></a></div>
  <div className="hero-foot"><span>ТЕХНОЛОГИИ · ДИЗАЙН · ДВИЖЕНИЕ</span><a href="#services">ЛИСТАЙТЕ ВНИЗ ↓</a></div>
  </section>
- {createPortal(<div className={'chip-glitch-overlay '+theme} ref={membraneRef} aria-hidden="true"/>,document.body)}
  <div className="content-zone" ref={zoneRef}>
- <div className="ambient-background" aria-hidden="true"><div className="aurora-field"/><div className="aurora-veil"/></div>
+ <div className="ambient-background" ref={auroraRef} aria-hidden="true"><div className="aurora-field"/><div className="aurora-veil"/></div>
   <section id="services" className="content-section services"><div className="section-top"><span className="eyebrow">01 / ЭКСПЕРТИЗА</span><h2>Делаем сложное<br/><em>простым.</em></h2><p>Выберите направление — карточка раскроется и покажет, что входит в работу.</p></div>
  <div className="service-stack">{services.map(x=><article key={x.id} className={'service-expand '+(expanded===x.id?'is-open':'')}><button className="service-head" aria-expanded={expanded===x.id} onClick={()=>setExpanded(v=>v===x.id?null:x.id)}><span className="service-index">{x.number} /</span><span className="service-title"><strong>{x.title}</strong><small>{x.desc}</small></span><span className="round-control">{expanded===x.id?'−':'+'}</span></button><div className="service-reveal"><div className="service-inner"><p>{x.details}</p><div className="service-tags">{x.tags.map(t=><span key={t}>{t}</span>)}</div><a href="#calculator" onClick={()=>{setChosen(v=>v.includes(x.id)?v:[...v,x.id]);setStep(2)}}>Рассчитать проект <span>↗</span></a></div></div></article>)}</div></section>
  <section id="projects" className="content-section projects"><div className="section-top"><span className="eyebrow">02 / ИЗБРАННЫЕ ПРОЕКТЫ</span><h2>Идеи в<br/><em>действии.</em></h2><p>Открывайте кейсы прямо здесь: внутри — живые сайты, а не просто изображения.</p></div>
