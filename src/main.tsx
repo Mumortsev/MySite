@@ -44,45 +44,53 @@ function App(){
    let raf=0,interval=0,first=0,started=0;
    let previousX=-1,previousY=-1;
    const smooth=(x:number)=>{const v=Math.max(0,Math.min(1,x));return v*v*(3-2*v)};
+   let seed=0,rotation=0;
    const draw=(now:number)=>{
-     const t=Math.min((now-started)/3300,1);
-     const envelope=smooth(t/.13)*(1-smooth((t-.72)/.28));
+     const t=Math.min((now-started)/3100,1);
      ctx.clearRect(0,0,size,size);
      const dark=zone.closest('.dark')!==null;
      const center=size/2;
-     const radius=t*430;
-     const wave=(r:number)=>{
-       const behind=radius-r;
-       if(behind< -28)return 0;
-       const front=smooth((behind+28)/38);
-       const decay=Math.exp(-Math.max(0,behind)/145);
-       return front*decay*Math.cos(behind*.067)*envelope;
+     const appear=smooth(t/.11);
+     const disappear=1-smooth((t-.64)/.36);
+     const opacity=appear*disappear;
+     const reach=65+400*smooth(t/.78);
+     const hash=(n:number)=>{const v=Math.sin(n*127.1+seed*311.7)*43758.5453;return v-Math.floor(v)};
+     const field=(x:number,y:number)=>{
+       const dx=x-center,dy=y-center;
+       const theta=Math.atan2(dy,dx)+rotation;
+       const elliptical=Math.hypot(dx*1.07,dy*.91);
+       const uneven=1+.14*Math.sin(theta*3+seed)+.075*Math.sin(theta*7-seed*2)+.04*Math.cos(theta*11+seed);
+       const distance=elliptical/uneven;
+       const leading=reach-distance;
+       const reveal=smooth((leading+28)/90);
+       const tail=1-smooth((leading-90)/260);
+       const islands=.83+.17*Math.sin(x*.025+y*.017+seed*5)*Math.cos(y*.031-x*.013);
+       return {strength:reveal*tail*opacity*Math.max(.35,islands),leading,theta};
      };
-     const displace=(x:number,y:number):[number,number]=>{
-       const dx=x-center,dy=y-center,r=Math.hypot(dx,dy);
-       const push=16*wave(r);
-       const factor=r>1?push/r:0;
-       return [x+dx*factor,y+dy*factor];
+     const warp=(x:number,y:number):[number,number]=>{
+       const f=field(x,y),dx=x-center,dy=y-center;
+       const offset=8.5*f.strength*Math.sin(x*.023+y*.011+seed*3);
+       return [x+offset+4*f.strength*Math.sin(y*.027+seed),y+7*f.strength*Math.sin(x*.019-seed*2)+2.5*f.strength*Math.cos(dy*.02)];
      };
-     ctx.strokeStyle=dark?'rgba(166,216,251,.8)':'rgba(52,106,151,.75)';
-     ctx.lineWidth=1;
-     const strokeSegment=(x1:number,y1:number,x2:number,y2:number)=>{
-       const mx=(x1+x2)/2-center,my=(y1+y2)/2-center;
-       const r=Math.hypot(mx,my);
-       const behind=radius-r;
-       if(behind< -34||behind>390)return;
-       const ripple=Math.abs(wave(r));
-       const alpha=Math.min(.75,envelope*(.08+.72*ripple)*smooth((behind+34)/45)*Math.exp(-Math.max(0,behind)/185));
-       if(alpha<.015)return;
-       const [ax,ay]=displace(x1,y1),[bx,by]=displace(x2,y2);
-       ctx.globalAlpha=alpha;
+     ctx.strokeStyle=dark?'rgba(162,220,250,.8)':'rgba(51,109,152,.78)';
+     ctx.lineWidth=.95;
+     const strokeSegment=(x1:number,y1:number,x2:number,y2:number,index:number)=>{
+       const mx=(x1+x2)/2,my=(y1+y2)/2;
+       const f=field(mx,my);
+       if(f.strength<.014)return;
+       const dropout=hash(index+Math.floor(t*14)*.73);
+       if(dropout<.065*f.strength)return;
+       const flicker=dropout>.94?1.16:1;
+       ctx.globalAlpha=Math.min(.67,f.strength*.61*flicker);
+       const [ax,ay]=warp(x1,y1),[bx,by]=warp(x2,y2);
        ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();
      };
+     let index=0;
      for(let x=0;x<=size;x+=25){
-       for(let y=0;y<size;y+=10)strokeSegment(x,y,x,Math.min(size,y+10));
+       for(let y=0;y<size;y+=12)strokeSegment(x,y,x,Math.min(size,y+12),index++);
      }
      for(let y=0;y<=size;y+=25){
-       for(let x=0;x<size;x+=10)strokeSegment(x,y,Math.min(size,x+10),y);
+       for(let x=0;x<size;x+=12)strokeSegment(x,y,Math.min(size,x+12),y,index++);
      }
      ctx.globalAlpha=1;
      if(t<1&&document.visibilityState==='visible')raf=requestAnimationFrame(draw);
@@ -102,6 +110,8 @@ function App(){
        y=top+bottom-y;
      }
      previousX=x;previousY=y;
+     seed=Math.random()*10;
+     rotation=Math.random()*Math.PI*2;
      layer.style.left=(x-rect.left)+'px';
      layer.style.top=(y-rect.top)+'px';
      layer.classList.add('visible');
