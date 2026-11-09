@@ -46,6 +46,13 @@ function App(){
    const smooth=(x:number)=>{const v=Math.max(0,Math.min(1,x));return v*v*(3-2*v)};
    let seed=0,rotation=0;
    const hash=(n:number)=>{const v=Math.sin(n*127.1+seed*311.7)*43758.5453;return v-Math.floor(v)};
+   // Protect every foreground card, label and control from the Aurora lattice.
+   const protectedSelector='h1,h2,h3,h4,p,button,a,input,textarea,select,label,.service-expand,.project-card,.case-card,.step-card,.faq-item,.calculator-card,.contact-card,.section-top,.eyebrow,.service-stack article,[role="dialog"]';
+   const protectedRects=()=>Array.from(zone.querySelectorAll<HTMLElement>(protectedSelector))
+     .filter(el=>el.getClientRects().length>0)
+     .map(el=>el.getBoundingClientRect())
+     .filter(r=>r.width>0&&r.height>0);
+   const overlaps=(x:number,y:number,r:DOMRect,pad:number)=>x+pad>r.left&&x-pad<r.right&&y+pad>r.top&&y-pad<r.bottom;
    const draw=(now:number)=>{
      const t=Math.min((now-started)/2800,1);
      ctx.clearRect(0,0,size,size);
@@ -94,6 +101,12 @@ function App(){
      for(let x=center-130;x<=center+130;x+=22){
        for(let y=center-130;y<=center+130;y+=12)segment(x,y,false,index++);
      }
+     // Clear pixels behind content, including if layout shifts while animating.
+     const layerRect=layer.getBoundingClientRect();
+     for(const r of protectedRects()){
+       const pad=14;
+       ctx.clearRect(r.left-layerRect.left-pad,r.top-layerRect.top-pad,r.width+pad*2,r.height+pad*2);
+     }
      ctx.globalAlpha=1;
      if(t<1&&document.visibilityState==='visible')raf=requestAnimationFrame(draw);
      else{raf=0;layer.classList.remove('visible');ctx.clearRect(0,0,size,size)}
@@ -105,12 +118,17 @@ function App(){
      if(bottom<=top+80)return;
      const viewportWidth=window.innerWidth;
      const visibleHeight=bottom-top;
-     let x=viewportWidth*(.18+Math.random()*.64);
-     let y=top+visibleHeight*(.18+Math.random()*.64);
-     if(previousX>=0&&Math.hypot(x-previousX,y-previousY)<Math.min(160,viewportWidth*.3)){
-       x=viewportWidth-x;
-       y=top+bottom-y;
+     const blocked=protectedRects();
+     // Only trigger the effect when an unobstructed background patch exists.
+     let x=0,y=0,found=false;
+     for(let attempt=0;attempt<48;attempt++){
+       const candidateX=viewportWidth*(.10+Math.random()*.80);
+       const candidateY=top+visibleHeight*(.08+Math.random()*.84);
+       if(blocked.some(r=>overlaps(candidateX,candidateY,r,125)))continue;
+       if(previousX>=0&&Math.hypot(candidateX-previousX,candidateY-previousY)<125)continue;
+       x=candidateX;y=candidateY;found=true;break;
      }
+     if(!found)return;
      previousX=x;previousY=y;
      seed=Math.random()*10;
      rotation=Math.random()*Math.PI*2;
