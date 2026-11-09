@@ -482,3 +482,24 @@ html,body,#root{overflow-x:clip;overflow-y:visible;overscroll-behavior-y:auto}
 @media(prefers-reduced-motion:reduce){
  .site .content-zone>.membrane-touch.chip-active{animation:chip-impact-reveal 3s ease-in-out forwards!important}
 }
+
+/* Body portal bypasses content-zone isolation, clipping and stacking contexts. */
+body>.chip-glitch-overlay{
+ position:fixed!important;z-index:2147483000!important;
+ width:240px!important;height:240px!important;left:50%;top:50%;
+ transform:translate(-50%,-50%)!important;pointer-events:none!important;
+ display:block!important;visibility:hidden!important;opacity:0!important;
+ background-size:520px auto!important;background-repeat:no-repeat!important;
+ background-image:url('/MySite/images/file_000000005a9082119456f21e2afbf013.png')!important;
+ filter:drop-shadow(0 0 16px rgba(110,190,255,.24));
+}
+body>.chip-glitch-overlay.dark{
+ background-image:url('/MySite/images/file_00000000937082119635bc4d1c5a581a.png')!important;
+}
+body>.chip-glitch-overlay.chip-active{
+ visibility:visible!important;
+ animation:chip-body-reveal 3.2s ease-in-out forwards!important;
+}
+@keyframes chip-body-reveal{
+ 0%{opacity:0}12%{opacity:1}58%{opacity:1}100%{opacity:0}
+}
