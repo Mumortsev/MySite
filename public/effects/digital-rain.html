@@ -22,6 +22,17 @@
 <script>
 (function() {
   var canvas = document.getElementById('canvas');
+  // CODE_MUM: adaptive device profile, light/dark appearance, reduced motion.
+  var cmQuery = new URLSearchParams(location.search);
+  var cmLight = cmQuery.get('theme') === 'light';
+  var cmQuality = Math.max(0.45, Math.min(1, Number(cmQuery.get('quality')) || 1));
+  var cmFps = Math.max(15, Math.min(60, Number(cmQuery.get('fps')) || 60));
+  var cmLastFrame = -1;
+  document.documentElement.style.background = cmLight ? '#f3f2ed' : '#0a0a0a';
+  document.body.style.background = cmLight ? '#f3f2ed' : '#0a0a0a';
+  canvas.style.filter = cmLight ? 'invert(1) hue-rotate(180deg) saturate(.68)' : 'none';
+  document.querySelector('.label')?.remove();
+
   var ctx = canvas.getContext('2d');
   var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -30,7 +41,7 @@
   var width, height, dpr;
 
   function resize() {
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    dpr = Math.min(window.devicePixelRatio || 1, 2) * cmQuality;
     width = window.innerWidth;
     height = window.innerHeight;
     canvas.width = Math.round(width * dpr);
@@ -45,7 +56,7 @@
 
   // Tunable parameters
   var FALL_SPEED = 1.0;
-  var COLUMN_DENSITY = 0.7;
+  var COLUMN_DENSITY = 0.7 * cmQuality;
 
   // Character sets
   var katakana = '\u30A2\u30A4\u30A6\u30A8\u30AA\u30AB\u30AD\u30AF\u30B1\u30B3\u30B5\u30B7\u30B9\u30BB\u30BD\u30BF\u30C1\u30C4\u30C6\u30C8\u30CA\u30CB\u30CC\u30CD\u30CE\u30CF\u30D2\u30D5\u30D8\u30DB\u30DE\u30DF\u30E0\u30E1\u30E2\u30E4\u30E6\u30E8\u30E9\u30EA\u30EB\u30EC\u30ED\u30EF\u30F2\u30F3';
@@ -545,6 +556,10 @@
   resize();
 
   function render(timestamp) {
+    requestAnimationFrame(render);
+    if (document.hidden) return;
+    if (cmLastFrame >= 0 && timestamp - cmLastFrame < 1000 / cmFps - 1) return;
+    cmLastFrame = timestamp;
     if (!lastTime) lastTime = timestamp;
     var dt = Math.min((timestamp - lastTime) / 1000, 0.05);
     lastTime = timestamp;
@@ -571,7 +586,6 @@
     drawWaterParticles(time);
     drawVignette();
 
-    requestAnimationFrame(render);
   }
 
   requestAnimationFrame(render);
