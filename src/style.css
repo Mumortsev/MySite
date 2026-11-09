@@ -11,15 +11,6 @@ html,body,#root{overflow-x:clip;overflow-y:visible;overscroll-behavior-y:auto}
 .content-zone .service-card{background:var(--panel)}
 @media(hover:none),(pointer:coarse){.hero-effect{pointer-events:none}.hero{touch-action:pan-y}}
 
-/* Light-mode Sequin Wave palette comparison; dark mode remains graphite/cold metal. */
-
-
-
-.palette-dot{width:10px;height:10px;border-radius:50%;display:inline-block;border:1px solid rgba(255,255,255,.45)}
-
-@media(max-width:1250px){.site-header{gap:12px}.header-controls{gap:6px}.palette-dot{width:15px;height:15px}}
-@media(max-width:680px){.header-controls{flex-wrap:wrap;justify-content:flex-end}.hero-copy{padding-top:clamp(205px,32vh,275px)}}
-
 /* COMPLETE PALETTE SYSTEM — applies to all headings, links, cards, controls, borders, backgrounds and transitions. */
 
 
@@ -28,7 +19,6 @@ html,body,#root{overflow-x:clip;overflow-y:visible;overscroll-behavior-y:auto}
  --bg:#0a1015;--fg:#e6edf3;--muted:#a5b5c3;--accent:#a9c5d4;--glass:rgba(14,24,33,.83);--line:rgba(178,201,216,.23);--panel:rgba(18,31,41,.79);
  --hero-overlay:linear-gradient(90deg,rgba(8,15,21,.90),rgba(8,15,21,.55) 56%,rgba(8,15,21,.08)),linear-gradient(0deg,#0a1015,transparent 30%);
 }
-.site.variant-sequin-wave 
 .site.variant-sequin-wave .variant-toggle button.active{background:var(--accent);color:var(--bg)}
 .site.variant-sequin-wave.light .variant-toggle button.active,.site.variant-sequin-wave.light .primary-cta{color:#fff}
 .site.variant-sequin-wave.dark .variant-toggle button.active,.site.variant-sequin-wave.dark .primary-cta{color:#0a1015}
@@ -37,15 +27,9 @@ html,body,#root{overflow-x:clip;overflow-y:visible;overscroll-behavior-y:auto}
 .site.variant-sequin-wave .live-dot{background:var(--accent)}
 .site.variant-sequin-wave .service-card:hover{border-color:var(--accent)}
 
-/* Light gold finish inspired by the underside of a CPU package: champagne ceramic, brushed brass, dark bronze ink. */
-
-
-
-
 /* Brushed aluminum: neutral silver, cool steel typography, graphite contrast. */
 .site.light.variant-sequin-wave.palette-silver{
  --bg:#e8ebed;--fg:#202b33;--muted:#52616d;--accent:#526a7b;--glass:rgba(242,245,247,.90);--line:rgba(66,83,96,.26);--panel:rgba(240,244,247,.87);
  --hero-overlay:linear-gradient(90deg,rgba(236,240,243,.96),rgba(236,240,243,.67) 56%,rgba(236,240,243,.06)),linear-gradient(0deg,#e8ebed,transparent 30%);
 }
-.palette-dot.silver{background:linear-gradient(130deg,#fff 0%,#aeb8c0 34%,#6d7d8a 60%,#e3e9ed 100%)}
-.site.light.variant-sequin-wave.palette-silver 
+
