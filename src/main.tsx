@@ -66,16 +66,24 @@ function App(){
      fade.addColorStop(.65,dark?'rgba(127,191,238,.36)':'rgba(72,131,170,.31)');
      fade.addColorStop(1,'rgba(100,170,210,0)');
      ctx.strokeStyle=fade;ctx.lineWidth=1;
-     ctx.globalAlpha=Math.min(.8,envelope*.86);
+     // Each short segment lights up only when the expanding wave reaches it.
+     const strokeSegment=(x1:number,y1:number,x2:number,y2:number)=>{
+       const mx=(x1+x2)/2-center,my=(y1+y2)/2-center;
+       const angle=Math.atan2(my,mx);
+       const waveRadius=radius*(1+.045*Math.sin(angle*4+progress*2)+.03*Math.cos(angle*7-progress));
+       const dist=Math.abs(Math.hypot(mx,my)-waveRadius);
+       const band=Math.exp(-Math.pow(dist/125,2));
+       const alpha=Math.min(.78,envelope*band*.82);
+       if(alpha<.012)return;
+       const [ax,ay]=displace(x1,y1),[bx,by]=displace(x2,y2);
+       ctx.globalAlpha=alpha;
+       ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();
+     };
      for(let x=0;x<=size;x+=25){
-       ctx.beginPath();
-       for(let y=0;y<=size;y+=8){const [px,py]=displace(x,y);if(y===0)ctx.moveTo(px,py);else ctx.lineTo(px,py)}
-       ctx.stroke();
+       for(let y=0;y<size;y+=12)strokeSegment(x,y,x,Math.min(size,y+12));
      }
      for(let y=0;y<=size;y+=25){
-       ctx.beginPath();
-       for(let x=0;x<=size;x+=8){const [px,py]=displace(x,y);if(x===0)ctx.moveTo(px,py);else ctx.lineTo(px,py)}
-       ctx.stroke();
+       for(let x=0;x<size;x+=12)strokeSegment(x,y,Math.min(size,x+12),y);
      }
      ctx.globalAlpha=1;
      if(t<1&&document.visibilityState==='visible')raf=requestAnimationFrame(draw);
