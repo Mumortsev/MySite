@@ -19,3 +19,29 @@ html,body,#root{overflow-x:clip;overflow-y:visible;overscroll-behavior-y:auto}
 .palette-dot.emerald{background:#32a487}.palette-dot.ice{background:#7daee8}.palette-dot.amethyst{background:#b48ad3}
 @media(max-width:1250px){.site-header{gap:12px}.header-controls{gap:6px}.palette-toggle button{font-size:0;padding:9px}.palette-dot{width:15px;height:15px}}
 @media(max-width:680px){.header-controls{flex-wrap:wrap;justify-content:flex-end}.palette-toggle{order:4;width:100%;justify-content:center}.palette-toggle button{flex:1;justify-content:center;font-size:11px}.hero-copy{padding-top:clamp(205px,32vh,275px)}}
+
+/* COMPLETE PALETTE SYSTEM — applies to all headings, links, cards, controls, borders, backgrounds and transitions. */
+.site.light.variant-sequin-wave.palette-emerald{
+ --bg:#eaf1ec;--fg:#19382f;--muted:#4d7063;--accent:#137e64;--glass:rgba(234,244,237,.88);--line:rgba(23,103,78,.24);--panel:rgba(236,247,239,.85);
+ --hero-overlay:linear-gradient(90deg,rgba(237,247,240,.94),rgba(237,247,240,.65) 56%,rgba(237,247,240,.08)),linear-gradient(0deg,#eaf1ec,transparent 30%);
+}
+.site.light.variant-sequin-wave.palette-ice{
+ --bg:#eaf1f9;--fg:#192d48;--muted:#506b88;--accent:#276da9;--glass:rgba(237,245,255,.88);--line:rgba(48,103,166,.26);--panel:rgba(233,242,254,.85);
+ --hero-overlay:linear-gradient(90deg,rgba(239,247,255,.95),rgba(239,247,255,.67) 56%,rgba(239,247,255,.08)),linear-gradient(0deg,#eaf1f9,transparent 30%);
+}
+.site.light.variant-sequin-wave.palette-amethyst{
+ --bg:#f1ecf5;--fg:#382547;--muted:#766187;--accent:#8351a4;--glass:rgba(248,241,252,.89);--line:rgba(129,78,160,.25);--panel:rgba(246,236,251,.85);
+ --hero-overlay:linear-gradient(90deg,rgba(249,242,253,.95),rgba(249,242,253,.66) 56%,rgba(249,242,253,.08)),linear-gradient(0deg,#f1ecf5,transparent 30%);
+}
+.site.dark.variant-sequin-wave.palette-graphite{
+ --bg:#0a1015;--fg:#e6edf3;--muted:#a5b5c3;--accent:#a9c5d4;--glass:rgba(14,24,33,.83);--line:rgba(178,201,216,.23);--panel:rgba(18,31,41,.79);
+ --hero-overlay:linear-gradient(90deg,rgba(8,15,21,.90),rgba(8,15,21,.55) 56%,rgba(8,15,21,.08)),linear-gradient(0deg,#0a1015,transparent 30%);
+}
+.site.variant-sequin-wave .palette-toggle button.active{background:var(--accent);color:var(--bg)}
+.site.variant-sequin-wave .variant-toggle button.active{background:var(--accent);color:var(--bg)}
+.site.variant-sequin-wave.light .variant-toggle button.active,.site.variant-sequin-wave.light .primary-cta{color:#fff}
+.site.variant-sequin-wave.dark .variant-toggle button.active,.site.variant-sequin-wave.dark .primary-cta{color:#0a1015}
+.site.variant-sequin-wave .hero-copy .eyebrow,.site.variant-sequin-wave .hero h1 em,.site.variant-sequin-wave .content-section h2 em,.site.variant-sequin-wave .card-number,.site.variant-sequin-wave .card-arrow{color:var(--accent)}
+.site.variant-sequin-wave .logo span,.site.variant-sequin-wave .live-dot{color:var(--accent)}
+.site.variant-sequin-wave .live-dot{background:var(--accent)}
+.site.variant-sequin-wave .service-card:hover{border-color:var(--accent)}
