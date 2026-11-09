@@ -491,3 +491,18 @@ body>.grid-reveal-overlay.grid-reveal-active{
 .site .content-zone>.ambient-background .aurora-mesh.square-grid-pulse{
  animation:cm-original-grid-pulse 3s ease-in-out forwards!important;
 }
+
+/* Root cause: earlier opacity:0!important defeated keyframe opacity.
+   Drive opacity directly via class specificity and transition. */
+.site .content-zone>.ambient-background .aurora-mesh,
+.site .content-zone>.ambient-background .aurora-mesh.square-grid-pulse{
+ animation:none!important;
+ opacity:0!important;
+ transition:opacity .65s ease-in-out!important;
+}
+.site .content-zone>.ambient-background .aurora-mesh.square-grid-visible{
+ animation:none!important;
+ opacity:.88!important;
+ visibility:visible!important;
+ transition:opacity .45s ease-in-out!important;
+}
