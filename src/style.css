@@ -317,3 +317,51 @@ html,body,#root{overflow-x:clip;overflow-y:visible;overscroll-behavior-y:auto}
 }
 @media(max-width:680px){.site .content-zone>.ambient-background .aurora-mesh{background-size:34px 34px}}
 @media(prefers-reduced-motion:reduce){.site .content-zone>.ambient-background .aurora-mesh{animation:none!important;opacity:.12}}
+
+/* Aurora star-mesh: tiny four-point diamonds, not square grid lines. */
+.site .content-zone>.ambient-background .aurora-mesh{
+ position:absolute!important;inset:0!important;z-index:2!important;
+ background-image:none!important;
+ background-color:transparent!important;
+ background-size:auto!important;
+ opacity:1!important;
+ transform:none!important;
+ animation:none!important;
+ mask-image:none!important;-webkit-mask-image:none!important;
+ pointer-events:none!important;
+}
+.site .content-zone>.ambient-background .aurora-mesh::before,
+.site .content-zone>.ambient-background .aurora-mesh::after{
+ content:"";position:absolute;left:0;right:0;height:540px;
+ pointer-events:none;
+ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M12 3.8 Q13.25 10.75 20.2 12 Q13.25 13.25 12 20.2 Q10.75 13.25 3.8 12 Q10.75 10.75 12 3.8Z' fill='%23c0e3fa'/%3E%3C/svg%3E")!important;
+ background-size:24px 24px!important;
+ background-repeat:repeat!important;
+ opacity:0;
+ animation:cm-star-mesh 15s ease-in-out infinite!important;
+ -webkit-mask-image:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,.12) 18%,#000 80%,#000 100%);
+ mask-image:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,.12) 18%,#000 80%,#000 100%);
+}
+.site .content-zone>.ambient-background .aurora-mesh::before{top:8%}
+.site .content-zone>.ambient-background .aurora-mesh::after{top:54%;animation-delay:-7.5s!important}
+.site.light .content-zone>.ambient-background .aurora-mesh::before,
+.site.light .content-zone>.ambient-background .aurora-mesh::after{
+ filter:drop-shadow(0 0 3px rgba(84,143,187,.24));
+}
+.site.dark .content-zone>.ambient-background .aurora-mesh::before,
+.site.dark .content-zone>.ambient-background .aurora-mesh::after{
+ filter:drop-shadow(0 0 4px rgba(131,198,242,.55));
+}
+@keyframes cm-star-mesh{
+ 0%,13%,83%,100%{opacity:0;transform:translate3d(0,12px,0)}
+ 28%,48%{opacity:.38;transform:translate3d(0,0,0)}
+ 65%{opacity:.12;transform:translate3d(0,-8px,0)}
+}
+@media(max-width:680px){
+ .site .content-zone>.ambient-background .aurora-mesh::before,
+ .site .content-zone>.ambient-background .aurora-mesh::after{height:460px;background-size:21px 21px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ .site .content-zone>.ambient-background .aurora-mesh::before,
+ .site .content-zone>.ambient-background .aurora-mesh::after{animation:none!important;opacity:.16}
+}
