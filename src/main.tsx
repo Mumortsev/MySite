@@ -1,5 +1,6 @@
 import React,{useEffect,useMemo,useRef,useState} from 'react';
 import {createRoot} from 'react-dom/client';
+import {createPortal} from 'react-dom';
 import './style.css';
 
 type Theme='dark'|'light';
@@ -27,7 +28,7 @@ function App(){
  const heroFrame=useRef<HTMLIFrameElement>(null);
  const zoneRef=useRef<HTMLDivElement>(null);
  const membraneRef=useRef<HTMLDivElement>(null);
- const meshCanvas=useRef<HTMLCanvasElement>(null);
+ 
  useEffect(()=>{
    const layer=membraneRef.current;
    const zone=zoneRef.current;
@@ -99,9 +100,10 @@ function App(){
  <div className="hero-copy"><div className="eyebrow"><span className="live-dot"/> ЦИФРОВАЯ СТУДИЯ / CODE_M</div><h1>ЗА ГРАНЬЮ<br/><em>КОДА.</em></h1><p>Создаём сайты, приложения и цифровые продукты, в которых технологии встречаются с дизайном.</p><a className="primary-cta" href="#services">Исследовать возможности <span>↗</span></a></div>
  <div className="hero-foot"><span>ТЕХНОЛОГИИ · ДИЗАЙН · ДВИЖЕНИЕ</span><a href="#services">ЛИСТАЙТЕ ВНИЗ ↓</a></div>
  </section>
+ {createPortal(<div className={'chip-glitch-overlay '+theme} ref={membraneRef} aria-hidden="true"/>,document.body)}
  <div className="content-zone" ref={zoneRef}>
  <div className="ambient-background" aria-hidden="true"><div className="aurora-field"/><div className="aurora-veil"/></div>
- <div className="membrane-touch" ref={membraneRef} aria-hidden="true"><canvas className="membrane-lines" ref={meshCanvas}/></div>\n <section id="services" className="content-section services"><div className="section-top"><span className="eyebrow">01 / ЭКСПЕРТИЗА</span><h2>Делаем сложное<br/><em>простым.</em></h2><p>Выберите направление — карточка раскроется и покажет, что входит в работу.</p></div>
+  <section id="services" className="content-section services"><div className="section-top"><span className="eyebrow">01 / ЭКСПЕРТИЗА</span><h2>Делаем сложное<br/><em>простым.</em></h2><p>Выберите направление — карточка раскроется и покажет, что входит в работу.</p></div>
  <div className="service-stack">{services.map(x=><article key={x.id} className={'service-expand '+(expanded===x.id?'is-open':'')}><button className="service-head" aria-expanded={expanded===x.id} onClick={()=>setExpanded(v=>v===x.id?null:x.id)}><span className="service-index">{x.number} /</span><span className="service-title"><strong>{x.title}</strong><small>{x.desc}</small></span><span className="round-control">{expanded===x.id?'−':'+'}</span></button><div className="service-reveal"><div className="service-inner"><p>{x.details}</p><div className="service-tags">{x.tags.map(t=><span key={t}>{t}</span>)}</div><a href="#calculator" onClick={()=>{setChosen(v=>v.includes(x.id)?v:[...v,x.id]);setStep(2)}}>Рассчитать проект <span>↗</span></a></div></div></article>)}</div></section>
  <section id="projects" className="content-section projects"><div className="section-top"><span className="eyebrow">02 / ИЗБРАННЫЕ ПРОЕКТЫ</span><h2>Идеи в<br/><em>действии.</em></h2><p>Открывайте кейсы прямо здесь: внутри — живые сайты, а не просто изображения.</p></div>
  <div className="project-grid">{[...projects,...customProjects].map((x,i)=><button key={x.id} className={'project-card project-'+x.color} onClick={()=>{setDevice('desktop');setProject(x)}}><div className="project-preview"><span className="project-glow"/><span className="preview-browser"><i/><i/><i/><span>{x.name}</span></span><span className="preview-word">{x.name}</span><span className="preview-lines"><b/><b/><b/></span></div><span className="project-bottom"><span><small>{x.type}</small><strong>{x.name}</strong><em>{x.description}</em></span><span className="round-control">↗</span></span></button>)}</div>
