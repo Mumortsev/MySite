@@ -47,50 +47,52 @@ function App(){
    let seed=0,rotation=0;
    const hash=(n:number)=>{const v=Math.sin(n*127.1+seed*311.7)*43758.5453;return v-Math.floor(v)};
    const draw=(now:number)=>{
-     const t=Math.min((now-started)/2900,1);
+     const t=Math.min((now-started)/2800,1);
      ctx.clearRect(0,0,size,size);
      const dark=zone.closest('.dark')!==null;
      const center=size/2;
-     ctx.strokeStyle=dark?'rgba(162,220,250,.8)':'rgba(51,109,152,.78)';
-     ctx.lineWidth=1;
-     // Straight grid fragments activate at staggered times as a loose,
-     // asymmetric signal travels outward. No displacement or circular mask.
+     ctx.strokeStyle=dark?'rgba(137,199,238,.76)':'rgba(56,112,156,.70)';
+     ctx.lineWidth=.95;
      const segment=(x:number,y:number,horizontal:boolean,index:number)=>{
-       const mx=x+(horizontal?13:0),my=y+(horizontal?0:13);
+       const length=12;
+       const mx=x+(horizontal?length/2:0),my=y+(horizontal?0:length/2);
        const dx=mx-center,dy=my-center;
        const angle=Math.atan2(dy,dx)+rotation;
-       const distance=Math.hypot(dx*1.08,dy*.93);
-       const directional=.12*Math.sin(angle*3+seed)+.08*Math.cos(angle*5-seed);
-       const delay=Math.max(0,(distance/650)*.53+directional+.18*hash(index+3));
-       const local=(t-delay)/(.20+.16*hash(index+9));
-       if(local<=0||local>=1.9)return;
-       const appear=smooth(local/.52);
-       const release=1-smooth((local-.9)/.85);
-       const alpha=appear*release*(.34+.43*hash(index+13));
-       if(alpha<.015)return;
-       // Fixed gaps are stable during each pulse, not random frame flicker.
-       if(hash(index+27)<.19)return;
-       const length=26;
-       const grow=smooth(local/.65);
-       const shrink=1-smooth((local-1.03)/.72);
-       const visibleLength=length*grow*shrink;
-       if(visibleLength<.5)return;
+       // A small, torn-edged patch, never a circle or full-screen grid.
+       const irregular=1+.23*Math.sin(angle*3+seed)+.14*Math.sin(angle*5-seed*1.7)+.09*Math.cos(angle*9+seed*2.3);
+       const distance=Math.hypot(dx*1.13,dy*.91);
+       const edge=(75+22*hash(91))*irregular;
+       const inside=smooth((edge-distance)/15);
+       if(inside<.025)return;
+       // Nearby detached shards and missing line fragments make the boundary broken.
+       const keep=hash(index+27);
+       if(keep<.20)return;
+       const normalized=Math.max(0,distance/Math.max(1,edge));
+       const delay=.06+normalized*.24+.19*hash(index+3);
+       const local=(t-delay)/(.19+.11*hash(index+9));
+       if(local<=0||local>=2.4)return;
+       const grow=smooth(local/.7);
+       const fade=1-smooth((local-1.05)/1.05);
+       const opacity=inside*grow*fade*(.28+.43*hash(index+13));
+       if(opacity<.014)return;
+       const visible=length*grow*(1-smooth((local-1.20)/.85));
+       if(visible<.35)return;
        const outward=horizontal?(dx>=0?1:-1):(dy>=0?1:-1);
-       const base=outward>0?0:length;
-       const from=base+(outward>0?0:-visibleLength);
-       const to=base+(outward>0?visibleLength:0);
-       ctx.globalAlpha=alpha;
+       const from=outward>0?0:length-visible;
+       const to=outward>0?visible:length;
+       ctx.globalAlpha=opacity;
        ctx.beginPath();
        if(horizontal){ctx.moveTo(x+from,y);ctx.lineTo(x+to,y)}
        else{ctx.moveTo(x,y+from);ctx.lineTo(x,y+to)}
        ctx.stroke();
      };
+     // Render only around the impact point: roughly 160–220 px across.
      let index=0;
-     for(let y=0;y<=size;y+=25){
-       for(let x=0;x<size;x+=26)segment(x,y,true,index++);
+     for(let y=center-130;y<=center+130;y+=22){
+       for(let x=center-130;x<=center+130;x+=12)segment(x,y,true,index++);
      }
-     for(let x=0;x<=size;x+=25){
-       for(let y=0;y<size;y+=26)segment(x,y,false,index++);
+     for(let x=center-130;x<=center+130;x+=22){
+       for(let y=center-130;y<=center+130;y+=12)segment(x,y,false,index++);
      }
      ctx.globalAlpha=1;
      if(t<1&&document.visibilityState==='visible')raf=requestAnimationFrame(draw);
