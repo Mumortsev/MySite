@@ -38,8 +38,6 @@ function App(){
  const[step,setStep]=useState(1);
  const[stage,setStage]=useState(0);
  const[faq,setFaq]=useState<number|null>(0);
- const [customUrl,setCustomUrl]=useState('');
- const [customName,setCustomName]=useState('');
  const [customProjects,setCustomProjects]=useState<{id:string;name:string;type:string;description:string;url:string;color:string}[]>([]);
  const total=services.filter(x=>chosen.includes(x.id)).reduce((sum,x)=>sum+x.base+x.options.reduce((n,o)=>n+(extras.includes(x.id+o[0])?o[1]:0),0),0);
  const toggle=(id:string)=>setChosen(v=>v.includes(id)?v.filter(x=>x!==id):[...v,id]);
@@ -81,4 +79,7 @@ function App(){
  <section id="contact" className="content-section contact"><span className="eyebrow">06 / НАЧНЁМ ДИАЛОГ</span><h2>Создадим<br/><em>что-то новое.</em></h2><p>Расскажите об идее. Мы подберём решение и обсудим детали проекта.</p><div className="contact-panel"><span>КОНТАКТЫ CODE_M</span><p>Каналы связи и форма заявки будут подключены после согласования контактных данных.</p><a href="#calculator" className="solid-action">Собрать проект ↗</a></div></section>
  </div></main>
  {project&&<div className="modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget)setProject(null)}}><section className="case-modal" role="dialog" aria-modal="true" aria-label={'Кейс '+project.name}><header className="modal-header"><div><span className="eyebrow">{project.type}</span><h3>{project.name}</h3></div><button className="modal-close" aria-label="Закрыть кейс" onClick={()=>setProject(null)}>✕</button></header><p className="modal-desc">{project.description}</p><div className="modal-toolbar"><div className="device-toggle"><button className={device==='desktop'?'active':''} onClick={()=>setDevice('desktop')}>Десктоп</button><button className={device==='mobile'?'active':''} onClick={()=>setDevice('mobile')}>Телефон</button></div><a href={project.url} target="_blank" rel="noopener noreferrer">Открыть отдельно ↗</a></div><div className={'modal-demo '+device}><iframe key={project.id} title={'Интерактивная демонстрация '+project.name} src={project.url} loading="lazy" referrerPolicy="no-referrer" sandbox="allow-scripts allow-forms allow-same-origin allow-popups"/></div><small className="modal-hint">Если сайт запрещает встраивание, используйте «Открыть отдельно».</small></section></div>}
+ <footer className="site-footer"><span>© CODE_M</span><span>DESIGN BY MUMORTSEV</span><span>{profile.label.toUpperCase()} · {profile.fps} FPS</span></footer>
+ </div>
+}
 createRoot(document.getElementById('root')!).render(<App/>);
