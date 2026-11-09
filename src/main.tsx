@@ -1,151 +1,19 @@
-import React,{useEffect,useRef,useState} from 'react';
-import {createRoot} from 'react-dom/client';
+import React,{useEffect,useState} from 'react';
+import{createRoot}from'react-dom/client';
 import './style.css';
-
-const SECTIONS=[
- {id:'gallery',label:'ГАЛЕРЕЯ',sub:'ЦИФРОВАЯ ГАЛЕРЕЯ',description:'Визуальные эксперименты и интерфейсы',items:['Интерактивные миры','Цифровая типографика','Генеративная графика']},
- {id:'works',label:'РАБОТЫ',sub:'ПРОЕКТЫ И РЕШЕНИЯ',description:'Веб-сайты, приложения и AI-инструменты',items:['Веб-разработка','Мобильные приложения','ИИ-решения']},
- {id:'calc',label:'КАЛЬКУЛЯТОР',sub:'ОЦЕНКА ПРОЕКТА',description:'Соберите конфигурацию вашего проекта',items:[]},
- {id:'contact',label:'КОНТАКТЫ',sub:'НАЧНЁМ СОЗДАВАТЬ',description:'Расскажите, какой мир хотите построить',items:[]}
-];
-const GLYPHS='01アイウエオカキクケコサシスセソタチツテト<>/{}[]';
-function Matrix({section,phase,onNavigate}){
- const ref=useRef(null);
- useEffect(()=>{
-  const canvas=ref.current,ctx=canvas.getContext('2d',{alpha:false});if(!ctx)return;
-  let w=0,h=0,cell=12,dpr=1,cols=[],masks=[],menuGlyphs=[],frame=0,raf=0,last=0,alive=true;
-  const pointer={x:-1000,y:-1000};
-  const rnd=(a,b)=>a+Math.random()*(b-a);
-  const pick=()=>GLYPHS[Math.floor(Math.random()*GLYPHS.length)];
-  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  function resize(){
-   const rect=canvas.getBoundingClientRect();w=rect.width;h=rect.height;
-   dpr=Math.min(devicePixelRatio||1,1.6,Math.sqrt(1600000/Math.max(1,w*h)));
-   canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
-   cell=w<650?Math.max(7,Math.floor(w/55)):13;
-   const nx=Math.ceil(w/cell),ny=Math.ceil(h/cell);
-   cols=Array.from({length:nx},(_,x)=>({x,head:rnd(-ny,ny),speed:rnd(.13,.48),length:Math.floor(rnd(8,24)),offset:rnd(0,100)}));
-   masks=Array.from({length:ny},()=>new Uint8Array(nx));
-   if(section!==null)return;
-   const off=document.createElement('canvas');off.width=nx;off.height=ny;const c=off.getContext('2d');c.fillStyle='#fff';c.textAlign='center';c.textBaseline='middle';
-   const logoSize=Math.min(ny*.22,nx*.205);
-   c.font='900 '+logoSize+'px Arial,sans-serif';
-   c.fillText('CODE_MUM',nx/2,ny*.47,nx*.94);
-   // The menu has its own finer sampling resolution but shares the exact screen coordinates and glyph renderer.
-   // Each Cyrillic letter is sampled at >= 6 pixels of height instead of being crushed into 2-3 grid rows.
-   menuGlyphs=[];
-   const menuFont=Math.max(17,Math.min(28,w*.046));
-   const fine=Math.max(2.4,menuFont/10);
-   const labels=[
-    {text:'ГАЛЕРЕЯ',anchor:'left',x:w*.045,y:h*.135},
-    {text:'РАБОТЫ',anchor:'right',x:w*.955,y:h*.135},
-    {text:'КАЛЬКУЛЯТОР',anchor:'left',x:w*.045,y:h*.865},
-    {text:'КОНТАККТЫ',anchor:'right',x:w*.955,y:h*.865}
-   ];
-   labels[3].text='КОНТАКТЫ';
-   for(const item of labels){
-    const mask=document.createElement('canvas');
-    const mc=mask.getContext('2d');
-    mc.font='900 '+menuFont+'px Arial,Helvetica,sans-serif';
-    const maxWidth=w*.44;
-    const measured=mc.measureText(item.text).width;
-    const font=Math.min(menuFont,menuFont*maxWidth/Math.max(measured,1));
-    const mw=Math.ceil(maxWidth/fine),mh=Math.ceil(font*1.5/fine);
-    mask.width=mw;mask.height=mh;
-    mc.fillStyle='#fff';mc.textAlign=item.anchor;mc.textBaseline='middle';
-    mc.font='900 '+font/fine+'px Arial,Helvetica,sans-serif';
-    mc.fillText(item.text,item.anchor==='left'?0:mw,mh/2,mw);
-    const pixels=mc.getImageData(0,0,mw,mh).data;
-    const x0=item.anchor==='left'?item.x:item.x-mw*fine;
-    const y0=item.y-mh*fine/2;
-    for(let yy=0;yy<mh;yy++)for(let xx=0;xx<mw;xx++){
-     if(pixels[(yy*mw+xx)*4+3]>105)menuGlyphs.push({x:x0+xx*fine,y:y0+yy*fine,seed:(xx*13+yy*7)%GLYPHS.length,size:fine});
-    }
-   }
-   const pix=c.getImageData(0,0,nx,ny).data;
-   for(let y=0;y<ny;y++)for(let x=0;x<nx;x++)if(pix[(y*nx+x)*4+3]>85)masks[y][x]=1;
-  }
-  const ro=new ResizeObserver(resize);ro.observe(canvas);resize();
-  function render(time){
-   if(!alive)return;
-   if(time-last<30){raf=requestAnimationFrame(render);return}last=time;frame++;
-   ctx.fillStyle='#010703';ctx.fillRect(0,0,w,h);
-   const halo=ctx.createRadialGradient(w/2,h*.46,0,w/2,h*.46,w*.8);halo.addColorStop(0,'#0c2618');halo.addColorStop(1,'#010703');ctx.fillStyle=halo;ctx.fillRect(0,0,w,h);
-   const nx=cols.length,ny=masks.length;
-   ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='bold '+Math.max(8,cell-1)+'px monospace';
-   const forming=Math.min(1,Math.max(0,(frame-8)/65));
-   for(const col of cols){
-    col.head+=col.speed*(reduce?0:1);
-    if(col.head-col.length>ny)col.head=rnd(-ny,0);
-    const x=col.x*cell+cell/2;
-    for(let y=0;y<ny;y++){
-     const py=y*cell+cell/2;
-     const inShape=section===null&&masks[y]?.[col.x]===1;
-     const delta=col.head-y;
-     const falling=delta>=0&&delta<col.length;
-     if(!falling&&!inShape)continue;
-     const distance=Math.hypot(x-pointer.x,py-pointer.y);
-     const near=Math.max(0,1-distance/100);
-     let alpha=falling?.12+.52*(1-delta/col.length):0;
-     if(inShape)alpha=Math.max(alpha,forming*(.77+.2*Math.sin(frame*.035+col.x*.4+y*.3)));
-     ctx.fillStyle=inShape?'rgba(171,255,193,'+Math.min(1,alpha)+')':falling&&delta<1?'rgba(205,255,222,.9)':'rgba(36,215,108,'+Math.min(1,alpha+near*.24)+')';
-     if(inShape){ctx.shadowBlur=3;ctx.shadowColor='#42f68d'}
-     ctx.fillText(GLYPHS[(col.x*13+y*7+Math.floor(frame/(inShape?9:5)))%GLYPHS.length],x,py);
-     ctx.shadowBlur=0;
-    }
-   }
-   if(section===null){
-    // Glyphs for menu and logo belong to one animated canvas, not HTML text overlays.
-    ctx.font='bold '+Math.max(3,menuGlyphs[0]?.size||3)+'px monospace';
-    for(const g of menuGlyphs){
-     const light=.74+.22*Math.sin(frame*.05+g.seed);
-     ctx.fillStyle='rgba(175,255,199,'+(forming*light)+')';
-     ctx.fillText(GLYPHS[(g.seed+Math.floor(frame/9))%GLYPHS.length],g.x,g.y);
-    }
-   }
-   if(phase!=='home'){
-    const cx=w/2,cy=h/2;
-    const strength=phase==='enter'?Math.min(1,frame/38):phase==='exit'?Math.min(1,frame/35):.25;
-    ctx.save();ctx.translate(cx,cy);
-    for(let i=0;i<50;i++){const a=i*2.39996+frame*.006,r=(i/50)*Math.max(w,h)*strength;ctx.strokeStyle='rgba(90,255,160,'+(1-i/50)*.3+')';ctx.beginPath();ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r);ctx.lineTo(Math.cos(a)*(r+30*strength),Math.sin(a)*(r+30*strength));ctx.stroke()}
-    ctx.restore();
-   }
-   raf=requestAnimationFrame(render);
-  }
-  raf=requestAnimationFrame(render);
-  const move=e=>{const r=canvas.getBoundingClientRect();pointer.x=e.clientX-r.left;pointer.y=e.clientY-r.top};
-  canvas.addEventListener('pointermove',move);
-  return()=>{alive=false;cancelAnimationFrame(raf);ro.disconnect();canvas.removeEventListener('pointermove',move)};
- },[section,phase]);
- return <canvas ref={ref} className="matrix" aria-hidden="true"/>;
-}
+const effects=[{"id":"flow-field","file":"flow-field.html","title":"Flow Field with Particle Trails","desc":"Particles following Perlin noise currents with warm amber trails."},{"id":"topographic","file":"topographic.html","title":"Topographic Contour Map","desc":"Living terrain map with marching squares isolines and elevation labels."},{"id":"generative-tree","file":"generative-tree.html","title":"Generative Branching Tree","desc":"L-system inspired tree with continuous growth and regrowth cycles."},{"id":"strange-attractor","file":"strange-attractor.html","title":"Strange Attractor (Lorenz)","desc":"Lorenz system with 3D projection, rotation, and glowing particle trails."},{"id":"pendulum-wave","file":"pendulum-wave.html","title":"Pendulum Wave","desc":"Physics-based pendulum wave creating emergent interference patterns."},{"id":"phyllotaxis","file":"phyllotaxis.html","title":"Phyllotaxis Spiral","desc":"Domain-warped simplex noise with layered organic flow and warm palette."},{"id":"champagne-fizz","file":"champagne-fizz.html","title":"Champagne Fizz","desc":"Effervescent bubbles rising with wobble physics, refractive highlights, and sparkle bursts."},{"id":"sugar-glass","file":"sugar-glass.html","title":"Sugar Glass","desc":"Caramelized sugar glass with Voronoi fracture patterns and golden light bleeding through cracks."},{"id":"resonant-strings","file":"resonant-strings.html","title":"Resonant Strings","desc":"Vibrating cello strings with standing wave harmonics, overtone interference, and rosin dust particles."},{"id":"chladni-resonance","file":"chladni-resonance.html","title":"Chladni Resonance","desc":"Sand patterns forming on a vibrating plate, morphing between harmonic modes with golden glow."},{"id":"kinetic-grid","file":"kinetic-grid.html","title":"Kinetic Grid","desc":"Spring-connected grid mesh with traveling force impulses, tension-colored connections in cyan and magenta."},{"id":"strobe-geometry","file":"strobe-geometry.html","title":"Strobe Geometry","desc":"Sharp neon geometric shapes flashing in choreographed sequence with cyan-to-magenta afterglow decay."},{"id":"laser-labyrinth","file":"laser-labyrinth.html","title":"Laser Labyrinth","desc":"Volumetric laser beams crossing in a dark void with prismatic colors and intersection flares."},{"id":"bass-ripple","file":"bass-ripple.html","title":"Bass Ripple","desc":"Vibrating speaker mesh with beat-synced wave displacement and metallic specular sheen."},{"id":"ink-dissolve","file":"ink-dissolve.html","title":"Ink Dissolve","desc":"Dense ink tendrils spreading through amber liquid with reaction-diffusion branching patterns."},{"id":"sequin-wave","file":"sequin-wave.html","title":"Sequin Wave","desc":"Grid of metallic sequin discs catching sweeping light with specular reflections and warm shimmer."},{"id":"gilt-mosaic","file":"gilt-mosaic.html","title":"Gilt Mosaic","desc":"Byzantine golden mosaic wall with individually shimmering tiles catching candlelight."},{"id":"gilded-fracture","file":"gilded-fracture.html","title":"Gilded Fracture","desc":"Kintsugi-inspired golden cracks spreading across dark surface with molten gold light bleeding through."},{"id":"radiant-geometry","file":"radiant-geometry.html","title":"Radiant Geometry","desc":"Animated Islamic geometric art with layered golden star patterns and counter-rotating tracery."},{"id":"sacred-strange","file":"sacred-strange.html","title":"Sacred Strange","desc":"Fractal golden geometry with overlapping star motifs creating Doctor Strange-like dimensional patterns."},{"id":"tropical-heat","file":"tropical-heat.html","title":"Tropical Heat","desc":"Heat shimmer distortion with chromatic aberration and tropical color blooms."},{"id":"neon-drip","file":"neon-drip.html","title":"Neon Drip","desc":"Metaball blobs dripping upward with surface tension physics and trailing tendrils."},{"id":"voltage-arc","file":"voltage-arc.html","title":"Voltage Arc","desc":"Electric plasma arcs crackling between floating conductor points with warm glow."},{"id":"moonlit-ripple","file":"moonlit-ripple.html","title":"Moonlit Ripple","desc":"Moon reflection on dark water with multi-directional waves, Fresnel reflection, and 3D perspective."},{"id":"eclipse-glow","file":"eclipse-glow.html","title":"Eclipse Glow","desc":"Solar eclipse corona with radial noise rays, diamond ring effect, and streaming solar wind."},{"id":"diamond-caustics","file":"diamond-caustics.html","title":"Diamond Caustics","desc":"Light refracting through rotating diamond facets casting prismatic caustic patterns."},{"id":"rain-on-glass","file":"rain-on-glass.html","title":"Rain on Glass","desc":"Ultra-realistic water droplets on a window, refracting a blurred city night with realistic trail physics."},{"id":"rain-umbrella","file":"rain-umbrella.html","title":"Rain on Umbrella","desc":"Looking up through a translucent umbrella at city lights, with refractive drops sliding down the dome and a slow walking drift."},{"id":"metamorphosis","file":"metamorphosis.html","title":"Metamorphosis","desc":"Raymarched metaballs continuously merging and splitting with liquid-metal surface."},{"id":"artpop-iridescence","file":"artpop-iridescence.html","title":"Artpop Iridescence","desc":"Holographic membrane with thin-film interference creating prismatic color shifts across an undulating surface."},{"id":"gilt-thread","file":"gilt-thread.html","title":"Gilt Thread","desc":"Golden threads tracing intricate parametric curves with metallic sheen and sparkle tips."},{"id":"event-horizon","file":"event-horizon.html","title":"Event Horizon","desc":"Physics-based black hole with raytraced gravitational lensing, volumetric accretion disk, and Doppler beaming."},{"id":"burning-film","file":"burning-film.html","title":"Burning Film","desc":"Celluloid film stock catching fire with spreading amber burn holes, glowing edges, and ember field."},{"id":"vertigo","file":"vertigo.html","title":"Vertigo","desc":"Slow hypnotic tunnel with crimson ring segments, wave-based illumination, and dark void center."},{"id":"stardust-veil","file":"stardust-veil.html","title":"Stardust Veil","desc":"Dense cosmic stardust with parallax depth layers, aurora ribbons, constellation threads, and brightness waves."},{"id":"smolder","file":"smolder.html","title":"Smolder","desc":"Radial warmth radiating through animated turbulence with heat shimmer, ember particles, and cool blue edges."},{"id":"signal-decay","file":"signal-decay.html","title":"Signal Decay","desc":"Clean amber waveforms progressively degrading into gorgeous warm noise — order dissolving into beautiful chaos."},{"id":"neon-revival","file":"neon-revival.html","title":"Neon Revival","desc":"Flickering neon sign with electrical buzz, dripping light particles, and wall reflections."},{"id":"lipstick-smear","file":"lipstick-smear.html","title":"Lipstick Smear","desc":"Viscous fluid simulation in hot pink and crimson — bold pigment streaking and blending with metallic sheen."},{"id":"glitter-storm","file":"glitter-storm.html","title":"Glitter Storm","desc":"Dense field of tumbling metallic glitter flakes catching rotating spotlights with specular flash physics."},{"id":"rubber-reality","file":"rubber-reality.html","title":"Rubber Reality","desc":"Elastic grid mesh deformed by traveling attractors with spring physics and snap-back."},{"id":"magma-core","file":"magma-core.html","title":"Magma Core","desc":"Volcanic eruption with thermal lava particles, cooling physics, and magma pool."},{"id":"clockwork-mind","file":"clockwork-mind.html","title":"Clockwork Mind","desc":"Interlocking precision gears with metallic rendering and mathematically correct meshing."},{"id":"edge-of-chaos","file":"edge-of-chaos.html","title":"Edge of Chaos","desc":"Reaction-diffusion maze with golden edge glow and organic pop-and-regrow cycle."},{"id":"shifting-veils","file":"shifting-veils.html","title":"Shifting Veils","desc":"Layered translucent noise curtains that morph and reveal patterns underneath."},{"id":"crystal-lattice","file":"crystal-lattice.html","title":"Crystal Lattice","desc":"Procedural crystal formations growing with faceted 3D lighting and prismatic sparkle."},{"id":"kaleidoscope-runway","file":"kaleidoscope-runway.html","title":"Kaleidoscope Runway","desc":"Fashion-inspired kaleidoscopic tessellations with symmetric mirror segments."},{"id":"digital-rain","file":"digital-rain.html","title":"Digital Rain","desc":"Warm amber character columns dissolving into zen ripples at the water surface."},{"id":"neon-drive","file":"neon-drive.html","title":"Neon Drive","desc":"Rain-slicked neon road stretching to a vanishing point with approaching headlights."},{"id":"aurora-veil","file":"aurora-veil.html","title":"Aurora Veil","desc":"Northern lights ribbons flowing above hexagonal ice crystal formations."}];
 function App(){
- const [section,setSection]=useState(null),[phase,setPhase]=useState('home'),[pending,setPending]=useState(null);
- const [target,setTarget]=useState({x:50,y:50});
- const [type,setType]=useState('site'),[pages,setPages]=useState(5),[ai,setAi]=useState(false);
- const [form,setForm]=useState({name:'',email:'',message:''});
- const timers=useRef([]);
- const schedule=(fn,ms)=>{const id=window.setTimeout(fn,ms);timers.current.push(id)};
- useEffect(()=>()=>timers.current.forEach(clearTimeout),[]);
- function enter(id){if(phase!=='home')return;const coords={gallery:[18,13.5],works:[82,13.5],calc:[18,86.5],contact:[82,86.5]};const [x,y]=coords[id];setTarget({x,y});setPending(id);setPhase('enter');schedule(()=>{setSection(id);setPhase('world');setPending(null)},1750)}
- function exit(){if(phase!=='world')return;setPhase('exit');schedule(()=>{setSection(null);setPhase('home')},1250)}
- const selected=SECTIONS.find(s=>s.id===section);
- const price=(type==='site'?35000:type==='app'?110000:65000)+Math.max(0,pages-1)*2500+(ai?30000:0);
- const regions=[['gallery','tl'],['works','tr'],['calc','bl'],['contact','br']];
- return <main><section className={'screen phase-'+phase}>
- <Matrix section={section} phase={phase}/>
- {phase==='home'&&<><h1 className="sr-only">CODE_MUM — цифровая студия</h1>{regions.map(([id,pos])=><button key={id} className={'hotspot '+pos} onClick={()=>enter(id)} aria-label={'Открыть '+SECTIONS.find(s=>s.id===id).label}><span className="sr-only">{SECTIONS.find(s=>s.id===id).label}</span></button>)}<div className="home-hint">ВЫБЕРИТЕ РАЗДЕЛ — ВОЙДИТЕ В КОД</div></>}
- {phase==='enter'&&<div className="warp" key="enter"><div className="warp-vortex"/><div className="warp-label">ВХОД В МИР / {SECTIONS.find(s=>s.id===pending)?.label}</div></div>}
- {section&&<div className={'world '+(phase==='exit'?'world-out':'world-in')}>
-  <div className="world-bar"><button className="back" onClick={exit} disabled={phase!=='world'}>← В МАТРИЦУ</button><span>CODE_MUM / {selected?.label}</span></div>
-  <div className="world-scene"><div className="world-grid"/><div className="world-inner">
-   <div className="world-index">МИР 0{SECTIONS.findIndex(s=>s.id===section)+1} / 04 <span className="pulse">● СИСТЕМА АКТИВНА</span></div>
-   <h2>{selected?.sub}</h2><p className="world-desc">{selected?.description}</p>
-   {(section==='gallery'||section==='works')&&<div className="world-cards">{selected.items.map((item,i)=><article key={item} className="world-card"><span>0{i+1} / CODE_MUM</span><div className="card-art"><div className={'artifact art-'+i}><i/><i/><i/></div></div><h3>{item}</h3><p>{section==='works'?'Направление разработки студии':'Направление визуальных экспериментов'}</p></article>)}</div>}
-   {section==='calc'&&<div className="calculator"><label>ТИП ПРОЕКТА<select value={type} onChange={e=>setType(e.target.value)}><option value="site">Сайт</option><option value="app">Мобильное приложение</option><option value="ai">ИИ-решение</option></select></label><label>КОЛИЧЕСТВО ЭКРАНОВ / СТРАНИЦ: {pages}<input type="range" min="1" max="20" value={pages} onChange={e=>setPages(Number(e.target.value))}/></label><label className="check"><input type="checkbox" checked={ai} onChange={e=>setAi(e.target.checked)}/> ИНТЕГРАЦИЯ ИИ</label><div className="total"><span>ОРИЕНТИРОВОЧНАЯ СТОИМОСТЬ</span><strong>{price.toLocaleString('ru-RU')} ₽</strong><small>Предварительная оценка, не публичная оферта</small></div><a className="action" href={'mailto:hello@codemum.ru?subject='+encodeURIComponent('Расчёт проекта CODE_MUM')+'&body='+encodeURIComponent('Тип: '+type+'; экранов: '+pages+'; ИИ: '+(ai?'да':'нет')+'; оценка: '+price+' ₽')}>ОТПРАВИТЬ РАСЧЁТ ↗</a></div>}
-   {section==='contact'&&<form className="contact" onSubmit={e=>{e.preventDefault();window.location.href='mailto:hello@codemum.ru?subject='+encodeURIComponent('Проект CODE_MUM от '+form.name)+'&body='+encodeURIComponent(form.message+'\n\nИмя: '+form.name+'\nКонтакт: '+form.email)}}><label>КАК ВАС ЗОВУТ<input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Ваше имя"/></label><label>КАК С ВАМИ СВЯЗАТЬСЯ<input required value={form.email} onChange={e=>setForm({...form,email:e.target.value})} placeholder="Email или Telegram"/></label><label>РАССКАЖИТЕ О ПРОЕКТЕ<textarea required rows={4} value={form.message} onChange={e=>setForm({...form,message:e.target.value})} placeholder="Что хотите создать?"/></label><button type="submit" className="action">СОЗДАТЬ ПИСЬМО ↗</button><small>Откроется ваше почтовое приложение для отправки заявки.</small></form>}
-  </div></div>
- </div>}
- </section></main>;
+ const[index,setIndex]=useState(0),[menu,setMenu]=useState(false),[minimal,setMinimal]=useState(false);
+ const effect=effects[index];
+ const choose=(i:number)=>{setIndex((i+effects.length)%effects.length);setMenu(false)};
+ useEffect(()=>{const onKey=(e:KeyboardEvent)=>{if(e.key==='ArrowRight')choose(index+1);if(e.key==='ArrowLeft')choose(index-1);if(e.key==='Escape')setMenu(false)};window.addEventListener('keydown',onKey);return()=>window.removeEventListener('keydown',onKey)},[index]);
+ return <main className={'lab'+(minimal?' minimal':'')} style={{'--accent': ['#9de6ce','#a5b7f4','#f4d5a3','#e5a8d4','#a8e8ee','#e5f3b2'][index%6]} as React.CSSProperties}>
+ <iframe key={effect.id} className="original-effect" src={import.meta.env.BASE_URL+'effects/'+effect.file} title={effect.title} allow="autoplay" loading="eager"/>
+ <div className="vignette"/>
+ <header className="header"><div className="brand">CODE<span>_</span>MUM<span className="period">.</span></div><div className="header-right"><span>ORIGINAL EFFECTS / 50</span><button onClick={()=>setMinimal(!minimal)} aria-label={minimal?'Показать интерфейс':'Скрыть интерфейс'}>{minimal?'◩':'⊟'}</button></div></header>
+ <section className="hero"><div className="eyebrow"><i/> DIGITAL MATERIAL EXPLORER</div><h1>Beyond<br/><em>the code.</em></h1><p>Выбирай эффект и взаимодействуй с пространством. Каждый фон — оригинальная реализация из открытого репозитория.</p><div className="hero-label"><span>{effect.title}</span><span>{String(index+1).padStart(2,'0')} / 50</span></div></section>
+ <footer className="controls"><div className="navigator"><button onClick={()=>choose(index-1)} aria-label="Предыдущий эффект">←</button><button className="current" onClick={()=>setMenu(true)}><span>{String(index+1).padStart(2,'0')}</span><strong>{effect.title}</strong><b>⌄</b></button><button onClick={()=>choose(index+1)} aria-label="Следующий эффект">→</button></div><div className="source"><a href={'https://github.com/pbakaus/radiant/blob/main/static/'+effect.file} target="_blank" rel="noreferrer">Оригинальный код ↗</a><span>RADIANT · MIT</span></div></footer>
+ {menu&&<div className="overlay" onClick={()=>setMenu(false)}><aside className="drawer" onClick={e=>e.stopPropagation()}><div className="drawer-head"><div><small>50 ORIGINAL SHADERS</small><h2>Выбрать эффект</h2></div><button onClick={()=>setMenu(false)} aria-label="Закрыть">✕</button></div><div className="grid">{effects.map((e,i)=><button key={e.id} className={i===index?'active':''} onClick={()=>choose(i)}><span>{String(i+1).padStart(2,'0')}</span><strong>{e.title}</strong><small>{e.desc}</small></button>)}</div><div className="credit">Оригинальные эффекты: <a href="https://github.com/pbakaus/radiant" target="_blank" rel="noreferrer">pbakaus/radiant</a> · MIT</div></aside></div>}
+ </main>
 }
-createRoot(document.getElementById('root')).render(<App/>);
+createRoot(document.getElementById('root')!).render(<App/>);
