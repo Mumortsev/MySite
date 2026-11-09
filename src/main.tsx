@@ -25,6 +25,48 @@ const projects=[
 const stages=[['01','Знакомство','Разбираемся в задаче, аудитории и результате.'],['02','Концепция','Определяем архитектуру, визуальный язык и сценарии.'],['03','Разработка','Создаём, анимируем и соединяем все функции.'],['04','Запуск','Тестируем, публикуем и помогаем развивать продукт.']];
 function App(){
  const heroFrame=useRef<HTMLIFrameElement>(null);
+ const zoneRef=useRef<HTMLDivElement>(null);
+ const membraneRef=useRef<HTMLDivElement>(null);
+ const membranePos=useRef({x:0,y:0,active:false});
+ const membraneRaf=useRef<number|null>(null);
+ const membraneTimer=useRef<number|null>(null);
+ const membranePoint=(clientX:number,clientY:number)=>{
+   const zone=zoneRef.current,membrane=membraneRef.current;
+   if(!zone||!membrane)return;
+   const r=zone.getBoundingClientRect();
+   membranePos.current.x=clientX-r.left;membranePos.current.y=clientY-r.top;
+   if(membraneRaf.current!==null)return;
+   membraneRaf.current=requestAnimationFrame(()=>{
+     membraneRaf.current=null;
+     const {x,y}=membranePos.current;
+     membrane.style.left=x+'px';membrane.style.top=y+'px';
+   });
+ };
+ const membraneEnd=()=>{
+   membranePos.current.active=false;
+   membraneRef.current?.classList.remove('pressed');
+   if(membraneTimer.current!==null)window.clearTimeout(membraneTimer.current);
+   membraneTimer.current=window.setTimeout(()=>membraneRef.current?.classList.remove('visible'),780);
+ };
+ const membraneStart=(e:React.PointerEvent<HTMLDivElement>)=>{
+   if(e.button!==0||e.target!==e.currentTarget && (e.target as HTMLElement).closest('button,a,input,label,textarea,select,.service-expand,.project-card,.calc-shell,.stage-panel,.stage-nav,.faq-list,.contact-panel,.section-top,.project-note'))return;
+   const zone=zoneRef.current;
+   if(!zone)return;
+   const rect=zone.getBoundingClientRect();
+   const el=document.elementFromPoint(e.clientX,e.clientY);
+   if(el?.closest('button,a,input,label,textarea,select,[role="dialog"]'))return;
+   if(e.clientY<rect.top||e.clientY>rect.bottom)return;
+   if(membraneTimer.current!==null)window.clearTimeout(membraneTimer.current);
+   membranePos.current.active=true;
+   membranePoint(e.clientX,e.clientY);
+   membraneRef.current?.classList.add('visible','pressed');
+ };
+ useEffect(()=>{
+   window.addEventListener('pointerup',membraneEnd);
+   window.addEventListener('pointercancel',membraneEnd);
+   return()=>{window.removeEventListener('pointerup',membraneEnd);window.removeEventListener('pointercancel',membraneEnd);if(membraneRaf.current!==null)cancelAnimationFrame(membraneRaf.current);if(membraneTimer.current!==null)clearTimeout(membraneTimer.current)};
+ },[]);
+ 
  const touchX=useRef<number|null>(null);
  const gesture=(x:number,y:number,dx:number)=>heroFrame.current?.contentWindow?.postMessage({type:'cm-gesture',x,y,dx},'*');
  const[theme,setTheme]=useState<Theme>(()=>{const saved=localStorage.getItem('cm-theme');return saved==='dark'||saved==='light'?saved:matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'});
@@ -60,9 +102,9 @@ function App(){
  <div className="hero-copy"><div className="eyebrow"><span className="live-dot"/> ЦИФРОВАЯ СТУДИЯ / CODE_M</div><h1>ЗА ГРАНЬЮ<br/><em>КОДА.</em></h1><p>Создаём сайты, приложения и цифровые продукты, в которых технологии встречаются с дизайном.</p><a className="primary-cta" href="#services">Исследовать возможности <span>↗</span></a></div>
  <div className="hero-foot"><span>ТЕХНОЛОГИИ · ДИЗАЙН · ДВИЖЕНИЕ</span><a href="#services">ЛИСТАЙТЕ ВНИЗ ↓</a></div>
  </section>
- <div className="content-zone">
- <div className="ambient-background" aria-hidden="true"><div className="aurora-field"/><div className="aurora-mesh"/><div className="aurora-veil"/></div>
- <section id="services" className="content-section services"><div className="section-top"><span className="eyebrow">01 / ЭКСПЕРТИЗА</span><h2>Делаем сложное<br/><em>простым.</em></h2><p>Выберите направление — карточка раскроется и покажет, что входит в работу.</p></div>
+ <div className="content-zone" ref={zoneRef} onPointerDown={membraneStart} onPointerMove={e=>{if(membranePos.current.active)membranePoint(e.clientX,e.clientY)}}>
+ <div className="ambient-background" aria-hidden="true"><div className="aurora-field"/><div className="aurora-veil"/></div>
+ <div className="membrane-touch" ref={membraneRef} aria-hidden="true"><div className="membrane-warp"/><div className="membrane-stars"/><div className="membrane-highlight"/></div>\n <section id="services" className="content-section services"><div className="section-top"><span className="eyebrow">01 / ЭКСПЕРТИЗА</span><h2>Делаем сложное<br/><em>простым.</em></h2><p>Выберите направление — карточка раскроется и покажет, что входит в работу.</p></div>
  <div className="service-stack">{services.map(x=><article key={x.id} className={'service-expand '+(expanded===x.id?'is-open':'')}><button className="service-head" aria-expanded={expanded===x.id} onClick={()=>setExpanded(v=>v===x.id?null:x.id)}><span className="service-index">{x.number} /</span><span className="service-title"><strong>{x.title}</strong><small>{x.desc}</small></span><span className="round-control">{expanded===x.id?'−':'+'}</span></button><div className="service-reveal"><div className="service-inner"><p>{x.details}</p><div className="service-tags">{x.tags.map(t=><span key={t}>{t}</span>)}</div><a href="#calculator" onClick={()=>{setChosen(v=>v.includes(x.id)?v:[...v,x.id]);setStep(2)}}>Рассчитать проект <span>↗</span></a></div></div></article>)}</div></section>
  <section id="projects" className="content-section projects"><div className="section-top"><span className="eyebrow">02 / ИЗБРАННЫЕ ПРОЕКТЫ</span><h2>Идеи в<br/><em>действии.</em></h2><p>Открывайте кейсы прямо здесь: внутри — живые сайты, а не просто изображения.</p></div>
  <div className="project-grid">{[...projects,...customProjects].map((x,i)=><button key={x.id} className={'project-card project-'+x.color} onClick={()=>{setDevice('desktop');setProject(x)}}><div className="project-preview"><span className="project-glow"/><span className="preview-browser"><i/><i/><i/><span>{x.name}</span></span><span className="preview-word">{x.name}</span><span className="preview-lines"><b/><b/><b/></span></div><span className="project-bottom"><span><small>{x.type}</small><strong>{x.name}</strong><em>{x.description}</em></span><span className="round-control">↗</span></span></button>)}</div>
