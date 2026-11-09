@@ -53,3 +53,11 @@ html,body,#root{overflow-x:clip;overflow-y:visible;overscroll-behavior-y:auto}
 }
 .palette-dot.gold{background:linear-gradient(135deg,#fff0b4,#c9922d 55%,#8a561a)}
 .site.light.variant-sequin-wave.palette-gold .palette-toggle button.active{color:#fff}
+
+/* Brushed aluminum: neutral silver, cool steel typography, graphite contrast. */
+.site.light.variant-sequin-wave.palette-silver{
+ --bg:#e8ebed;--fg:#202b33;--muted:#52616d;--accent:#526a7b;--glass:rgba(242,245,247,.90);--line:rgba(66,83,96,.26);--panel:rgba(240,244,247,.87);
+ --hero-overlay:linear-gradient(90deg,rgba(236,240,243,.96),rgba(236,240,243,.67) 56%,rgba(236,240,243,.06)),linear-gradient(0deg,#e8ebed,transparent 30%);
+}
+.palette-dot.silver{background:linear-gradient(130deg,#fff 0%,#aeb8c0 34%,#6d7d8a 60%,#e3e9ed 100%)}
+.site.light.variant-sequin-wave.palette-silver .palette-toggle button.active{color:#fff}
