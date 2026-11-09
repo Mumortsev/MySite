@@ -438,3 +438,20 @@ html,body,#root{overflow-x:clip;overflow-y:visible;overscroll-behavior-y:auto}
  filter:none!important;opacity:1;pointer-events:none;
 }
 @media(prefers-reduced-motion:reduce){.site .content-zone>.membrane-touch{display:none!important}}
+
+/* Chip reveal must sit ABOVE the Aurora and section backgrounds, not behind them. */
+.site .content-zone>.membrane-touch,
+.site .content-zone>.membrane-touch.visible{
+ position:absolute!important;z-index:5!important;
+ mix-blend-mode:normal!important;
+ display:block!important;
+ overflow:visible!important;
+ pointer-events:none!important;
+}
+.site .content-zone>.membrane-touch .membrane-lines{
+ display:block!important;visibility:visible!important;
+ opacity:1!important;mix-blend-mode:normal!important;
+}
+@media(prefers-reduced-motion:reduce){
+ .site .content-zone>.membrane-touch{display:block!important}
+}
