@@ -479,3 +479,15 @@ body>.grid-reveal-overlay.grid-reveal-active{
 @media(max-width:680px){
  .site .content-zone>.ambient-background .aurora-mesh{background-size:34px 34px!important}
 }
+
+/* Reliability fix: legacy Aurora pseudo layers and SVG masks must not obscure the grid. */
+.site .content-zone>.ambient-background .aurora-mesh{
+ z-index:10!important;visibility:visible!important;
+ -webkit-mask-image:none!important;mask-image:none!important;
+ background-image:linear-gradient(to right,var(--mesh-line) 1px,transparent 1px),linear-gradient(to bottom,var(--mesh-line) 1px,transparent 1px)!important;
+}
+.site .content-zone>.ambient-background .aurora-mesh::before,
+.site .content-zone>.ambient-background .aurora-mesh::after{display:none!important;content:none!important}
+.site .content-zone>.ambient-background .aurora-mesh.square-grid-pulse{
+ animation:cm-original-grid-pulse 3s ease-in-out forwards!important;
+}
