@@ -34,7 +34,7 @@ function App(){
  const base=import.meta.env.BASE_URL;
  const q=useMemo(()=>new URLSearchParams({theme,quality:String(profile.quality),fps:String(profile.fps)}).toString(),[theme,profile]);
  const heroUrl=base+'effects/'+variant+'.html?'+q+(variant==='sequin-wave'?'&palette='+wavePalette:'');
- const rainUrl=base+'effects/digital-rain.html?'+q+'&plain=1'+(variant==='sequin-wave'&&theme==='light'?'&palette='+wavePalette:'');
+ const rainUrl=base+'effects/digital-rain.html?'+q+'&plain=1'+(variant==='sequin-wave'?(theme==='light'?'&palette='+wavePalette:'&finish=graphite'):'');
  return <div className={'site '+theme+' variant-'+variant+' palette-'+(variant==='sequin-wave'?(theme==='dark'?'graphite':wavePalette):'default')}>
  <header className="site-header"><a href="#top" className="logo" aria-label="CODE MUM — наверх">CODE<span>_</span>MUM<span>.</span></a>
  <nav className="header-links"><a href="#services">Услуги</a><a href="#approach">Подход</a><a href="#contact">Контакты</a></nav>
