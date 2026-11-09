@@ -183,3 +183,19 @@ html,body,#root{overflow-x:clip;overflow-y:visible;overscroll-behavior-y:auto}
 .calc-stage{animation:cm-stage .24s ease-out both}
 .case-modal{animation:cm-modal .28s cubic-bezier(.2,.7,.2,1)}
 @media(prefers-reduced-motion:reduce){.ambient-background *{animation:none!important}}
+
+/* Aurora Glow — restrained, metallic and legible in both CODE_M themes. */
+.ambient-background{isolation:isolate}
+.ambient-background::before,.ambient-background::after{content:"";position:absolute;pointer-events:none;z-index:0;width:105%;height:35%;left:-12%;border-radius:50%;filter:blur(clamp(70px,11vw,170px));transform:rotate(-16deg);opacity:.48;will-change:transform;animation:cm-aurora 28s ease-in-out infinite alternate}
+.ambient-background::before{top:10%}
+.ambient-background::after{top:49%;left:18%;animation-duration:38s;animation-direction:alternate-reverse;opacity:.34}
+.site.dark .ambient-background{background:linear-gradient(180deg,#0a1015,#0b1119 40%,#090f15)}
+.site.dark .ambient-background::before{background:linear-gradient(90deg,transparent 4%,rgba(51,77,103,.10) 20%,rgba(103,143,169,.22) 50%,rgba(176,196,211,.12) 75%,transparent 96%)}
+.site.dark .ambient-background::after{background:linear-gradient(90deg,transparent,rgba(69,95,119,.13) 25%,rgba(117,151,171,.16) 60%,transparent)}
+.site.light .ambient-background{background:linear-gradient(165deg,#e8ebed,#eef0f2 45%,#e2e6e9)}
+.site.light .ambient-background::before{background:linear-gradient(90deg,transparent 4%,rgba(255,255,255,.38) 22%,rgba(149,171,187,.25) 49%,rgba(255,255,255,.46) 75%,transparent 96%);opacity:.65}
+.site.light .ambient-background::after{background:linear-gradient(90deg,transparent,rgba(133,153,168,.17) 30%,rgba(255,255,255,.58) 60%,transparent);opacity:.56}
+.ambient-background .ambient-orbit,.ambient-background .ambient-core{display:none}
+.ambient-background .ambient-grid{opacity:.12}
+@keyframes cm-aurora{0%{transform:translate3d(-3%,0,0) rotate(-16deg) scale(1)}50%{transform:translate3d(5%,3%,0) rotate(-10deg) scale(1.07)}100%{transform:translate3d(-1%,-2%,0) rotate(-20deg) scale(1.02)}}
+@media(prefers-reduced-motion:reduce){.ambient-background::before,.ambient-background::after{animation:none!important;will-change:auto}}
