@@ -45,52 +45,52 @@ function App(){
    let previousX=-1,previousY=-1;
    const smooth=(x:number)=>{const v=Math.max(0,Math.min(1,x));return v*v*(3-2*v)};
    let seed=0,rotation=0;
+   const hash=(n:number)=>{const v=Math.sin(n*127.1+seed*311.7)*43758.5453;return v-Math.floor(v)};
    const draw=(now:number)=>{
-     const t=Math.min((now-started)/3100,1);
+     const t=Math.min((now-started)/2900,1);
      ctx.clearRect(0,0,size,size);
      const dark=zone.closest('.dark')!==null;
      const center=size/2;
-     const appear=smooth(t/.11);
-     const disappear=1-smooth((t-.64)/.36);
-     const opacity=appear*disappear;
-     const reach=65+400*smooth(t/.78);
-     const hash=(n:number)=>{const v=Math.sin(n*127.1+seed*311.7)*43758.5453;return v-Math.floor(v)};
-     const field=(x:number,y:number)=>{
-       const dx=x-center,dy=y-center;
-       const theta=Math.atan2(dy,dx)+rotation;
-       const elliptical=Math.hypot(dx*1.07,dy*.91);
-       const uneven=1+.14*Math.sin(theta*3+seed)+.075*Math.sin(theta*7-seed*2)+.04*Math.cos(theta*11+seed);
-       const distance=elliptical/uneven;
-       const leading=reach-distance;
-       const reveal=smooth((leading+28)/90);
-       const tail=1-smooth((leading-90)/260);
-       const islands=.83+.17*Math.sin(x*.025+y*.017+seed*5)*Math.cos(y*.031-x*.013);
-       return {strength:reveal*tail*opacity*Math.max(.35,islands),leading,theta};
-     };
-     const warp=(x:number,y:number):[number,number]=>{
-       const f=field(x,y),dx=x-center,dy=y-center;
-       const offset=8.5*f.strength*Math.sin(x*.023+y*.011+seed*3);
-       return [x+offset+4*f.strength*Math.sin(y*.027+seed),y+7*f.strength*Math.sin(x*.019-seed*2)+2.5*f.strength*Math.cos(dy*.02)];
-     };
      ctx.strokeStyle=dark?'rgba(162,220,250,.8)':'rgba(51,109,152,.78)';
-     ctx.lineWidth=.95;
-     const strokeSegment=(x1:number,y1:number,x2:number,y2:number,index:number)=>{
-       const mx=(x1+x2)/2,my=(y1+y2)/2;
-       const f=field(mx,my);
-       if(f.strength<.014)return;
-       const dropout=hash(index+Math.floor(t*14)*.73);
-       if(dropout<.065*f.strength)return;
-       const flicker=dropout>.94?1.16:1;
-       ctx.globalAlpha=Math.min(.67,f.strength*.61*flicker);
-       const [ax,ay]=warp(x1,y1),[bx,by]=warp(x2,y2);
-       ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();
+     ctx.lineWidth=1;
+     // Straight grid fragments activate at staggered times as a loose,
+     // asymmetric signal travels outward. No displacement or circular mask.
+     const segment=(x:number,y:number,horizontal:boolean,index:number)=>{
+       const mx=x+(horizontal?13:0),my=y+(horizontal?0:13);
+       const dx=mx-center,dy=my-center;
+       const angle=Math.atan2(dy,dx)+rotation;
+       const distance=Math.hypot(dx*1.08,dy*.93);
+       const directional=.12*Math.sin(angle*3+seed)+.08*Math.cos(angle*5-seed);
+       const delay=Math.max(0,(distance/650)*.53+directional+.18*hash(index+3));
+       const local=(t-delay)/(.20+.16*hash(index+9));
+       if(local<=0||local>=1.9)return;
+       const appear=smooth(local/.52);
+       const release=1-smooth((local-.9)/.85);
+       const alpha=appear*release*(.34+.43*hash(index+13));
+       if(alpha<.015)return;
+       // Fixed gaps are stable during each pulse, not random frame flicker.
+       if(hash(index+27)<.19)return;
+       const length=26;
+       const grow=smooth(local/.65);
+       const shrink=1-smooth((local-1.03)/.72);
+       const visibleLength=length*grow*shrink;
+       if(visibleLength<.5)return;
+       const outward=horizontal?(dx>=0?1:-1):(dy>=0?1:-1);
+       const base=outward>0?0:length;
+       const from=base+(outward>0?0:-visibleLength);
+       const to=base+(outward>0?visibleLength:0);
+       ctx.globalAlpha=alpha;
+       ctx.beginPath();
+       if(horizontal){ctx.moveTo(x+from,y);ctx.lineTo(x+to,y)}
+       else{ctx.moveTo(x,y+from);ctx.lineTo(x,y+to)}
+       ctx.stroke();
      };
      let index=0;
-     for(let x=0;x<=size;x+=25){
-       for(let y=0;y<size;y+=12)strokeSegment(x,y,x,Math.min(size,y+12),index++);
-     }
      for(let y=0;y<=size;y+=25){
-       for(let x=0;x<size;x+=12)strokeSegment(x,y,Math.min(size,x+12),y,index++);
+       for(let x=0;x<size;x+=26)segment(x,y,true,index++);
+     }
+     for(let x=0;x<=size;x+=25){
+       for(let y=0;y<size;y+=26)segment(x,y,false,index++);
      }
      ctx.globalAlpha=1;
      if(t<1&&document.visibilityState==='visible')raf=requestAnimationFrame(draw);
