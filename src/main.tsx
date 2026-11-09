@@ -42,48 +42,47 @@ function App(){
    canvas.width=Math.round(size*dpr);canvas.height=Math.round(size*dpr);
    ctx.setTransform(dpr,0,0,dpr,0,0);
    let raf=0,interval=0,first=0,started=0;
+   let previousX=-1,previousY=-1;
    const smooth=(x:number)=>{const v=Math.max(0,Math.min(1,x));return v*v*(3-2*v)};
    const draw=(now:number)=>{
      const t=Math.min((now-started)/3300,1);
-     const progress=smooth(t);
-     const envelope=smooth(t/.26)*(1-smooth((t-.68)/.32));
+     const envelope=smooth(t/.13)*(1-smooth((t-.72)/.28));
      ctx.clearRect(0,0,size,size);
-     const dark=getComputedStyle(zone).getPropertyValue('--bg').trim().startsWith('#0a')||zone.closest('.dark')!==null;
+     const dark=zone.closest('.dark')!==null;
      const center=size/2;
-     const radius=progress*490;
+     const radius=t*430;
+     const wave=(r:number)=>{
+       const behind=radius-r;
+       if(behind< -28)return 0;
+       const front=smooth((behind+28)/38);
+       const decay=Math.exp(-Math.max(0,behind)/145);
+       return front*decay*Math.cos(behind*.067)*envelope;
+     };
      const displace=(x:number,y:number):[number,number]=>{
        const dx=x-center,dy=y-center,r=Math.hypot(dx,dy);
-       const angle=Math.atan2(dy,dx);
-       const irregular=1+.045*Math.sin(angle*4+progress*2)+.03*Math.cos(angle*7-progress);
-       const distance=r-radius*irregular;
-       const band=Math.exp(-Math.pow(distance/105,2));
-       const pull=25*envelope*band;
-       const factor=r>1?pull/r:0;
-       return [x-dx*factor+7*envelope*band*Math.sin(angle*3),y-dy*factor+8*envelope*band];
+       const push=16*wave(r);
+       const factor=r>1?push/r:0;
+       return [x+dx*factor,y+dy*factor];
      };
-     const fade=ctx.createRadialGradient(center,center,0,center,center,350);
-     fade.addColorStop(0,dark?'rgba(162,214,251,.53)':'rgba(54,107,151,.48)');
-     fade.addColorStop(.65,dark?'rgba(127,191,238,.36)':'rgba(72,131,170,.31)');
-     fade.addColorStop(1,'rgba(100,170,210,0)');
-     ctx.strokeStyle=fade;ctx.lineWidth=1;
-     // Each short segment lights up only when the expanding wave reaches it.
+     ctx.strokeStyle=dark?'rgba(166,216,251,.8)':'rgba(52,106,151,.75)';
+     ctx.lineWidth=1;
      const strokeSegment=(x1:number,y1:number,x2:number,y2:number)=>{
        const mx=(x1+x2)/2-center,my=(y1+y2)/2-center;
-       const angle=Math.atan2(my,mx);
-       const waveRadius=radius*(1+.045*Math.sin(angle*4+progress*2)+.03*Math.cos(angle*7-progress));
-       const dist=Math.abs(Math.hypot(mx,my)-waveRadius);
-       const band=Math.exp(-Math.pow(dist/125,2));
-       const alpha=Math.min(.78,envelope*band*.82);
-       if(alpha<.012)return;
+       const r=Math.hypot(mx,my);
+       const behind=radius-r;
+       if(behind< -34||behind>390)return;
+       const ripple=Math.abs(wave(r));
+       const alpha=Math.min(.75,envelope*(.08+.72*ripple)*smooth((behind+34)/45)*Math.exp(-Math.max(0,behind)/185));
+       if(alpha<.015)return;
        const [ax,ay]=displace(x1,y1),[bx,by]=displace(x2,y2);
        ctx.globalAlpha=alpha;
        ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();
      };
      for(let x=0;x<=size;x+=25){
-       for(let y=0;y<size;y+=12)strokeSegment(x,y,x,Math.min(size,y+12));
+       for(let y=0;y<size;y+=10)strokeSegment(x,y,x,Math.min(size,y+10));
      }
      for(let y=0;y<=size;y+=25){
-       for(let x=0;x<size;x+=12)strokeSegment(x,y,Math.min(size,x+12),y);
+       for(let x=0;x<size;x+=10)strokeSegment(x,y,Math.min(size,x+10),y);
      }
      ctx.globalAlpha=1;
      if(t<1&&document.visibilityState==='visible')raf=requestAnimationFrame(draw);
@@ -94,8 +93,15 @@ function App(){
      const rect=zone.getBoundingClientRect();
      const top=Math.max(rect.top,0),bottom=Math.min(rect.bottom,window.innerHeight);
      if(bottom<=top+80)return;
-     const x=window.innerWidth/2;
-     const y=(top+bottom)/2;
+     const viewportWidth=window.innerWidth;
+     const visibleHeight=bottom-top;
+     let x=viewportWidth*(.18+Math.random()*.64);
+     let y=top+visibleHeight*(.18+Math.random()*.64);
+     if(previousX>=0&&Math.hypot(x-previousX,y-previousY)<Math.min(160,viewportWidth*.3)){
+       x=viewportWidth-x;
+       y=top+bottom-y;
+     }
+     previousX=x;previousY=y;
      layer.style.left=(x-rect.left)+'px';
      layer.style.top=(y-rect.top)+'px';
      layer.classList.add('visible');
