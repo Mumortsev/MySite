@@ -5,9 +5,9 @@ const params=new URLSearchParams(location.search),light=params.get('theme')==='l
 const quality=Math.max(.45,Math.min(1,Number(params.get('quality'))||1)),fps=Math.max(15,Math.min(60,Number(params.get('fps'))||60));
 const plain=params.get('plain')==='1';
 const palette=params.get('palette')||'emerald';
-const rainRgb=light?(palette==='ice'?'45,112,184':palette==='amethyst'?'123,72,161':'15,111,77'):'93,203,215';
+const rainRgb=light?(palette==='ice'?'45,112,184':palette==='amethyst'?'123,72,161':'15,111,77'):(params.get('finish')==='graphite'?'175,204,221':'93,203,215');
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-const bg=light?'#f3f2ed':'#06100d',rain=light?'#386f60':'#338968',bright=light?'#125d4d':'#c0ffe0';
+const bg=light?(palette==='ice'?'#eaf1f9':palette==='amethyst'?'#f1ecf5':'#eaf1ec'):(params.get('finish')==='graphite'?'#0a1015':'#06100d');
 const alphabet='0123456789アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン';
 let w=0,h=0,dpr=1,cell=14,cols=[],glyphs=[],last=0,accum=0,elapsed=0,mask=null,maskW=0,maskH=0,outline=[],smallText=[],sparkles=[];
 function rnd(n){return Math.random()*n}
