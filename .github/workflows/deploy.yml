@@ -2,7 +2,7 @@ name: Deploy CODE_MUM 50 Effects to GitHub Pages
 # Redeploy after enabling public GitHub Pages
 on:
   push:
-    branches: [feature/beyond-the-code-v3]
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
