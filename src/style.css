@@ -199,3 +199,21 @@ html,body,#root{overflow-x:clip;overflow-y:visible;overscroll-behavior-y:auto}
 .ambient-background .ambient-grid{opacity:.12}
 @keyframes cm-aurora{0%{transform:translate3d(-3%,0,0) rotate(-16deg) scale(1)}50%{transform:translate3d(5%,3%,0) rotate(-10deg) scale(1.07)}100%{transform:translate3d(-1%,-2%,0) rotate(-20deg) scale(1.02)}}
 @media(prefers-reduced-motion:reduce){.ambient-background::before,.ambient-background::after{animation:none!important;will-change:auto}}
+
+/* Aurora Glow visibility fix: previous negative stacking layer was hidden behind the content background. */
+.content-zone{isolation:isolate;position:relative;background:var(--bg)}
+.content-zone>.ambient-background{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;isolation:isolate}
+.content-zone>.content-section,.content-zone>.site-footer{position:relative;z-index:1}
+.content-zone>.ambient-background::before,.content-zone>.ambient-background::after{z-index:1;display:block;content:"";position:absolute;border-radius:48%;filter:blur(65px);mix-blend-mode:normal;opacity:1;will-change:transform,background-position;animation:cm-aurora-visible 18s ease-in-out infinite alternate}
+.content-zone>.ambient-background::before{width:105%;height:720px;top:5%;left:-32%;transform:rotate(-24deg)}
+.content-zone>.ambient-background::after{width:100%;height:760px;top:43%;left:18%;animation-duration:24s;animation-direction:alternate-reverse}
+.site.dark .content-zone>.ambient-background{background:linear-gradient(160deg,#0a1015 0%,#101b29 36%,#090f15 70%,#0a1015 100%)}
+.site.dark .content-zone>.ambient-background::before{background:radial-gradient(ellipse at 50% 50%,rgba(69,163,210,.52) 0%,rgba(82,128,198,.37) 28%,rgba(42,75,135,.23) 53%,transparent 76%)}
+.site.dark .content-zone>.ambient-background::after{background:radial-gradient(ellipse at 50% 50%,rgba(85,186,183,.35) 0%,rgba(73,113,181,.30) 38%,transparent 75%)}
+.site.light .content-zone>.ambient-background{background:linear-gradient(160deg,#e8ebed 0%,#e1e8ee 37%,#f0f3f6 70%,#e8ebed 100%)}
+.site.light .content-zone>.ambient-background::before{background:radial-gradient(ellipse at 50% 50%,rgba(92,142,182,.45) 0%,rgba(147,176,206,.39) 29%,rgba(255,255,255,.12) 56%,transparent 77%)}
+.site.light .content-zone>.ambient-background::after{background:radial-gradient(ellipse at 50% 50%,rgba(116,160,194,.34) 0%,rgba(175,195,214,.38) 38%,transparent 76%)}
+.content-zone>.ambient-background .ambient-grid{display:none}
+@keyframes cm-aurora-visible{0%{transform:translate3d(-9%,1%,0) rotate(-22deg) scale(.88)}50%{transform:translate3d(12%,-5%,0) rotate(-6deg) scale(1.12)}100%{transform:translate3d(-1%,8%,0) rotate(-30deg) scale(.94)}}
+@media(max-width:680px){.content-zone>.ambient-background::before{width:165%;left:-65%;height:620px}.content-zone>.ambient-background::after{width:165%;left:-18%;height:640px;top:49%}.content-zone>.ambient-background::before,.content-zone>.ambient-background::after{filter:blur(48px)}}
+@media(prefers-reduced-motion:reduce){.content-zone>.ambient-background::before,.content-zone>.ambient-background::after{animation:none!important;will-change:auto}}
