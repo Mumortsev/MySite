@@ -27,9 +27,62 @@ function App(){
  const heroFrame=useRef<HTMLIFrameElement>(null);
  const zoneRef=useRef<HTMLDivElement>(null);
  const membraneRef=useRef<HTMLDivElement>(null);
+ const meshCanvas=useRef<HTMLCanvasElement>(null);
  const membranePos=useRef({x:0,y:0,active:false});
  const membraneRaf=useRef<number|null>(null);
  const membraneTimer=useRef<number|null>(null);
+ useEffect(()=>{
+   const canvas=meshCanvas.current;
+   if(!canvas)return;
+   const ctx=canvas.getContext('2d');
+   if(!ctx)return;
+   const size=360,dpr=Math.min(window.devicePixelRatio||1,2);
+   canvas.width=Math.round(size*dpr);canvas.height=Math.round(size*dpr);
+   ctx.setTransform(dpr,0,0,dpr,0,0);
+   let strength=0,velocity=0,raf=0,last=performance.now();
+   const draw=(now:number)=>{
+     const dt=Math.min((now-last)/16.67,2);last=now;
+     const target=membranePos.current.active?1:0;
+     velocity+=(target-strength)*.13*dt;
+     velocity*=Math.pow(.77,dt);
+     strength+=velocity*dt;
+     if(Math.abs(strength)<.001&&!membranePos.current.active&&Math.abs(velocity)<.001){strength=0;velocity=0}
+     ctx.clearRect(0,0,size,size);
+     const dark=document.documentElement.dataset.theme==='dark';
+     const center=size/2;
+     const displace=(x:number,y:number):[number,number]=>{
+       const dx=x-center,dy=y-center,r=Math.hypot(dx,dy);
+       const gaussian=Math.exp(-(r*r)/(2*112*112));
+       const pinch=48*strength*gaussian;
+       const fall=r<1?0:pinch/r;
+       return [x-dx*fall,y-dy*fall+13*strength*gaussian];
+     };
+     const fade=ctx.createRadialGradient(center,center,18,center,center,171);
+     fade.addColorStop(0,dark?'rgba(175,222,255,.85)':'rgba(43,99,145,.82)');
+     fade.addColorStop(.58,dark?'rgba(132,198,244,.52)':'rgba(63,119,162,.43)');
+     fade.addColorStop(1,'rgba(100,170,210,0)');
+     ctx.strokeStyle=fade;
+     ctx.lineWidth=1.15;
+     ctx.globalAlpha=Math.max(0,Math.min(1,strength));
+     for(let x=0;x<=size;x+=19){
+       ctx.beginPath();
+       for(let y=0;y<=size;y+=6){const [px,py]=displace(x,y);if(y===0)ctx.moveTo(px,py);else ctx.lineTo(px,py)}
+       ctx.stroke();
+     }
+     for(let y=0;y<=size;y+=19){
+       ctx.beginPath();
+       for(let x=0;x<=size;x+=6){const [px,py]=displace(x,y);if(x===0)ctx.moveTo(px,py);else ctx.lineTo(px,py)}
+       ctx.stroke();
+     }
+     ctx.globalAlpha=1;
+     if(strength!==0||membranePos.current.active)raf=requestAnimationFrame(draw);
+     else raf=0;
+   };
+   const kick=()=>{if(!raf){last=performance.now();raf=requestAnimationFrame(draw)}};
+   const membrane=membraneRef.current;
+   membrane?.addEventListener('membrane-kick',kick);
+   return()=>{membrane?.removeEventListener('membrane-kick',kick);if(raf)cancelAnimationFrame(raf)};
+ },[]);
  const membranePoint=(clientX:number,clientY:number)=>{
    const zone=zoneRef.current,membrane=membraneRef.current;
    if(!zone||!membrane)return;
@@ -45,6 +98,7 @@ function App(){
  const membraneEnd=()=>{
    membranePos.current.active=false;
    membraneRef.current?.classList.remove('pressed');
+   membraneRef.current?.dispatchEvent(new Event('membrane-kick'));
    if(membraneTimer.current!==null)window.clearTimeout(membraneTimer.current);
    membraneTimer.current=window.setTimeout(()=>membraneRef.current?.classList.remove('visible'),780);
  };
@@ -60,6 +114,7 @@ function App(){
    membranePos.current.active=true;
    membranePoint(e.clientX,e.clientY);
    membraneRef.current?.classList.add('visible','pressed');
+   membraneRef.current?.dispatchEvent(new Event('membrane-kick'));
  };
  useEffect(()=>{
    window.addEventListener('pointerup',membraneEnd);
@@ -104,7 +159,7 @@ function App(){
  </section>
  <div className="content-zone" ref={zoneRef} onPointerDown={membraneStart} onPointerMove={e=>{if(membranePos.current.active)membranePoint(e.clientX,e.clientY)}}>
  <div className="ambient-background" aria-hidden="true"><div className="aurora-field"/><div className="aurora-veil"/></div>
- <div className="membrane-touch" ref={membraneRef} aria-hidden="true"><div className="membrane-warp"/><div className="membrane-stars"/><div className="membrane-highlight"/></div>\n <section id="services" className="content-section services"><div className="section-top"><span className="eyebrow">01 / ЭКСПЕРТИЗА</span><h2>Делаем сложное<br/><em>простым.</em></h2><p>Выберите направление — карточка раскроется и покажет, что входит в работу.</p></div>
+ <div className="membrane-touch" ref={membraneRef} aria-hidden="true"><div className="membrane-warp"/><canvas className="membrane-lines" ref={meshCanvas} aria-hidden="true"/><div className="membrane-highlight"/></div>\n <section id="services" className="content-section services"><div className="section-top"><span className="eyebrow">01 / ЭКСПЕРТИЗА</span><h2>Делаем сложное<br/><em>простым.</em></h2><p>Выберите направление — карточка раскроется и покажет, что входит в работу.</p></div>
  <div className="service-stack">{services.map(x=><article key={x.id} className={'service-expand '+(expanded===x.id?'is-open':'')}><button className="service-head" aria-expanded={expanded===x.id} onClick={()=>setExpanded(v=>v===x.id?null:x.id)}><span className="service-index">{x.number} /</span><span className="service-title"><strong>{x.title}</strong><small>{x.desc}</small></span><span className="round-control">{expanded===x.id?'−':'+'}</span></button><div className="service-reveal"><div className="service-inner"><p>{x.details}</p><div className="service-tags">{x.tags.map(t=><span key={t}>{t}</span>)}</div><a href="#calculator" onClick={()=>{setChosen(v=>v.includes(x.id)?v:[...v,x.id]);setStep(2)}}>Рассчитать проект <span>↗</span></a></div></div></article>)}</div></section>
  <section id="projects" className="content-section projects"><div className="section-top"><span className="eyebrow">02 / ИЗБРАННЫЕ ПРОЕКТЫ</span><h2>Идеи в<br/><em>действии.</em></h2><p>Открывайте кейсы прямо здесь: внутри — живые сайты, а не просто изображения.</p></div>
  <div className="project-grid">{[...projects,...customProjects].map((x,i)=><button key={x.id} className={'project-card project-'+x.color} onClick={()=>{setDevice('desktop');setProject(x)}}><div className="project-preview"><span className="project-glow"/><span className="preview-browser"><i/><i/><i/><span>{x.name}</span></span><span className="preview-word">{x.name}</span><span className="preview-lines"><b/><b/><b/></span></div><span className="project-bottom"><span><small>{x.type}</small><strong>{x.name}</strong><em>{x.description}</em></span><span className="round-control">↗</span></span></button>)}</div>
