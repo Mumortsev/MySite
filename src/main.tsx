@@ -25,7 +25,90 @@ const projects=[
 const stages=[['01','Знакомство','Разбираемся в задаче, аудитории и результате.'],['02','Концепция','Определяем архитектуру, визуальный язык и сценарии.'],['03','Разработка','Создаём, анимируем и соединяем все функции.'],['04','Запуск','Тестируем, публикуем и помогаем развивать продукт.']];
 function App(){
  const heroFrame=useRef<HTMLIFrameElement>(null);
- const touchX=useRef<number|null>(null);
+ const zoneRef=useRef<HTMLDivElement>(null);
+ const membraneRef=useRef<HTMLDivElement>(null);
+ const meshCanvas=useRef<HTMLCanvasElement>(null);
+ useEffect(()=>{
+   const canvas=meshCanvas.current;
+   const zone=zoneRef.current;
+   const layer=membraneRef.current;
+   if(!canvas||!zone||!layer)return;
+   const ctx=canvas.getContext('2d');
+   if(!ctx)return;
+   const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+   if(reduced)return;
+   const size=720;
+   const dpr=Math.min(window.devicePixelRatio||1,2);
+   canvas.width=Math.round(size*dpr);canvas.height=Math.round(size*dpr);
+   ctx.setTransform(dpr,0,0,dpr,0,0);
+   let raf=0,interval=0,first=0,started=0;
+   const smooth=(x:number)=>{const v=Math.max(0,Math.min(1,x));return v*v*(3-2*v)};
+   const draw=(now:number)=>{
+     const t=Math.min((now-started)/3300,1);
+     const progress=smooth(t);
+     const envelope=smooth(t/.26)*(1-smooth((t-.68)/.32));
+     ctx.clearRect(0,0,size,size);
+     const dark=getComputedStyle(zone).getPropertyValue('--bg').trim().startsWith('#0a')||zone.closest('.dark')!==null;
+     const center=size/2;
+     const radius=progress*490;
+     const displace=(x:number,y:number):[number,number]=>{
+       const dx=x-center,dy=y-center,r=Math.hypot(dx,dy);
+       const angle=Math.atan2(dy,dx);
+       const irregular=1+.045*Math.sin(angle*4+progress*2)+.03*Math.cos(angle*7-progress);
+       const distance=r-radius*irregular;
+       const band=Math.exp(-Math.pow(distance/105,2));
+       const pull=25*envelope*band;
+       const factor=r>1?pull/r:0;
+       return [x-dx*factor+7*envelope*band*Math.sin(angle*3),y-dy*factor+8*envelope*band];
+     };
+     const fade=ctx.createRadialGradient(center,center,0,center,center,350);
+     fade.addColorStop(0,dark?'rgba(162,214,251,.53)':'rgba(54,107,151,.48)');
+     fade.addColorStop(.65,dark?'rgba(127,191,238,.36)':'rgba(72,131,170,.31)');
+     fade.addColorStop(1,'rgba(100,170,210,0)');
+     ctx.strokeStyle=fade;ctx.lineWidth=1;
+     // Each short segment lights up only when the expanding wave reaches it.
+     const strokeSegment=(x1:number,y1:number,x2:number,y2:number)=>{
+       const mx=(x1+x2)/2-center,my=(y1+y2)/2-center;
+       const angle=Math.atan2(my,mx);
+       const waveRadius=radius*(1+.045*Math.sin(angle*4+progress*2)+.03*Math.cos(angle*7-progress));
+       const dist=Math.abs(Math.hypot(mx,my)-waveRadius);
+       const band=Math.exp(-Math.pow(dist/125,2));
+       const alpha=Math.min(.78,envelope*band*.82);
+       if(alpha<.012)return;
+       const [ax,ay]=displace(x1,y1),[bx,by]=displace(x2,y2);
+       ctx.globalAlpha=alpha;
+       ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();
+     };
+     for(let x=0;x<=size;x+=25){
+       for(let y=0;y<size;y+=12)strokeSegment(x,y,x,Math.min(size,y+12));
+     }
+     for(let y=0;y<=size;y+=25){
+       for(let x=0;x<size;x+=12)strokeSegment(x,y,Math.min(size,x+12),y);
+     }
+     ctx.globalAlpha=1;
+     if(t<1&&document.visibilityState==='visible')raf=requestAnimationFrame(draw);
+     else{raf=0;layer.classList.remove('visible');ctx.clearRect(0,0,size,size)}
+   };
+   const pulse=()=>{
+     if(document.visibilityState!=='visible'||raf)return;
+     const rect=zone.getBoundingClientRect();
+     const top=Math.max(rect.top,0),bottom=Math.min(rect.bottom,window.innerHeight);
+     if(bottom<=top+80)return;
+     const x=window.innerWidth/2;
+     const y=(top+bottom)/2;
+     layer.style.left=(x-rect.left)+'px';
+     layer.style.top=(y-rect.top)+'px';
+     layer.classList.add('visible');
+     started=performance.now();
+     raf=requestAnimationFrame(draw);
+   };
+   first=window.setTimeout(pulse,1400);
+   interval=window.setInterval(pulse,10000);
+   const onVisibility=()=>{if(document.hidden){if(raf)cancelAnimationFrame(raf);raf=0;layer.classList.remove('visible');ctx.clearRect(0,0,size,size)}};
+   document.addEventListener('visibilitychange',onVisibility);
+   return()=>{window.clearTimeout(first);window.clearInterval(interval);document.removeEventListener('visibilitychange',onVisibility);if(raf)cancelAnimationFrame(raf)};
+ },[]);
+  const touchX=useRef<number|null>(null);
  const gesture=(x:number,y:number,dx:number)=>heroFrame.current?.contentWindow?.postMessage({type:'cm-gesture',x,y,dx},'*');
  const[theme,setTheme]=useState<Theme>(()=>{const saved=localStorage.getItem('cm-theme');return saved==='dark'||saved==='light'?saved:matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'});
  const[profile,setProfile]=useState<Profile>(getProfile);
@@ -60,9 +143,9 @@ function App(){
  <div className="hero-copy"><div className="eyebrow"><span className="live-dot"/> ЦИФРОВАЯ СТУДИЯ / CODE_M</div><h1>ЗА ГРАНЬЮ<br/><em>КОДА.</em></h1><p>Создаём сайты, приложения и цифровые продукты, в которых технологии встречаются с дизайном.</p><a className="primary-cta" href="#services">Исследовать возможности <span>↗</span></a></div>
  <div className="hero-foot"><span>ТЕХНОЛОГИИ · ДИЗАЙН · ДВИЖЕНИЕ</span><a href="#services">ЛИСТАЙТЕ ВНИЗ ↓</a></div>
  </section>
- <div className="content-zone">
- <div className="ambient-background" aria-hidden="true"><div className="aurora-field"/><div className="aurora-mesh"/><div className="aurora-veil"/></div>
- <section id="services" className="content-section services"><div className="section-top"><span className="eyebrow">01 / ЭКСПЕРТИЗА</span><h2>Делаем сложное<br/><em>простым.</em></h2><p>Выберите направление — карточка раскроется и покажет, что входит в работу.</p></div>
+ <div className="content-zone" ref={zoneRef}>
+ <div className="ambient-background" aria-hidden="true"><div className="aurora-field"/><div className="aurora-veil"/></div>
+ <div className="membrane-touch" ref={membraneRef} aria-hidden="true"><canvas className="membrane-lines" ref={meshCanvas}/></div>\n <section id="services" className="content-section services"><div className="section-top"><span className="eyebrow">01 / ЭКСПЕРТИЗА</span><h2>Делаем сложное<br/><em>простым.</em></h2><p>Выберите направление — карточка раскроется и покажет, что входит в работу.</p></div>
  <div className="service-stack">{services.map(x=><article key={x.id} className={'service-expand '+(expanded===x.id?'is-open':'')}><button className="service-head" aria-expanded={expanded===x.id} onClick={()=>setExpanded(v=>v===x.id?null:x.id)}><span className="service-index">{x.number} /</span><span className="service-title"><strong>{x.title}</strong><small>{x.desc}</small></span><span className="round-control">{expanded===x.id?'−':'+'}</span></button><div className="service-reveal"><div className="service-inner"><p>{x.details}</p><div className="service-tags">{x.tags.map(t=><span key={t}>{t}</span>)}</div><a href="#calculator" onClick={()=>{setChosen(v=>v.includes(x.id)?v:[...v,x.id]);setStep(2)}}>Рассчитать проект <span>↗</span></a></div></div></article>)}</div></section>
  <section id="projects" className="content-section projects"><div className="section-top"><span className="eyebrow">02 / ИЗБРАННЫЕ ПРОЕКТЫ</span><h2>Идеи в<br/><em>действии.</em></h2><p>Открывайте кейсы прямо здесь: внутри — живые сайты, а не просто изображения.</p></div>
  <div className="project-grid">{[...projects,...customProjects].map((x,i)=><button key={x.id} className={'project-card project-'+x.color} onClick={()=>{setDevice('desktop');setProject(x)}}><div className="project-preview"><span className="project-glow"/><span className="preview-browser"><i/><i/><i/><span>{x.name}</span></span><span className="preview-word">{x.name}</span><span className="preview-lines"><b/><b/><b/></span></div><span className="project-bottom"><span><small>{x.type}</small><strong>{x.name}</strong><em>{x.description}</em></span><span className="round-control">↗</span></span></button>)}</div>
