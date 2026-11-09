@@ -217,3 +217,12 @@ html,body,#root{overflow-x:clip;overflow-y:visible;overscroll-behavior-y:auto}
 @keyframes cm-aurora-visible{0%{transform:translate3d(-9%,1%,0) rotate(-22deg) scale(.88)}50%{transform:translate3d(12%,-5%,0) rotate(-6deg) scale(1.12)}100%{transform:translate3d(-1%,8%,0) rotate(-30deg) scale(.94)}}
 @media(max-width:680px){.content-zone>.ambient-background::before{width:165%;left:-65%;height:620px}.content-zone>.ambient-background::after{width:165%;left:-18%;height:640px;top:49%}.content-zone>.ambient-background::before,.content-zone>.ambient-background::after{filter:blur(48px)}}
 @media(prefers-reduced-motion:reduce){.content-zone>.ambient-background::before,.content-zone>.ambient-background::after{animation:none!important;will-change:auto}}
+
+/* Aurora v3: directly painted on content surface, not a hidden stacking layer. */
+.site .content-zone{background-color:var(--bg);background-repeat:no-repeat;background-attachment:scroll;background-size:180% 130%,170% 140%,100% 100%;animation:cm-surface-shift 13s ease-in-out infinite alternate}
+.site.dark .content-zone{background-image:radial-gradient(ellipse 42% 24% at 16% 22%,rgba(34,145,203,.50) 0%,rgba(42,94,159,.32) 44%,transparent 100%),radial-gradient(ellipse 43% 27% at 86% 61%,rgba(46,187,178,.32) 0%,rgba(76,99,191,.26) 45%,transparent 100%),linear-gradient(130deg,#0a1015,#111e2e 48%,#090e15)}
+.site.light .content-zone{background-image:radial-gradient(ellipse 40% 26% at 13% 24%,rgba(92,158,204,.55) 0%,rgba(152,189,215,.34) 48%,transparent 100%),radial-gradient(ellipse 46% 28% at 86% 62%,rgba(117,157,191,.48) 0%,rgba(206,222,235,.48) 52%,transparent 100%),linear-gradient(130deg,#e8ebed,#f4f7fa 48%,#dfe5eb)}
+@keyframes cm-surface-shift{0%{background-position:0% 0%,100% 100%,center}50%{background-position:80% 40%,15% 50%,center}100%{background-position:100% 90%,0% 0%,center}}
+.site .content-zone>.ambient-background{opacity:.85}
+.site .content-zone>.content-section{background:transparent}
+@media(prefers-reduced-motion:reduce){.site .content-zone{animation:none}}
