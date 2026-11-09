@@ -296,3 +296,24 @@ html,body,#root{overflow-x:clip;overflow-y:visible;overscroll-behavior-y:auto}
 @keyframes cm-aurora-flow{0%{transform:translate3d(-14%,0,0) skewX(-5deg) scaleX(.84);filter:blur(44px)}50%{transform:translate3d(3%,0,0) skewX(5deg) scaleX(1.05);filter:blur(30px)}100%{transform:translate3d(15%,0,0) skewX(-3deg) scaleX(.9);filter:blur(42px)}}
 @media(max-width:680px){.site .content-zone>.ambient-background .aurora-field{inset:-3% -95%;width:290%;height:106%;filter:blur(22px);animation-duration:9s}.site .hero::after{height:190px!important}}
 @media(prefers-reduced-motion:reduce){.site .content-zone>.ambient-background .aurora-field{animation:none!important;will-change:auto}}
+
+/* Aurora mesh: periodically emerging technical lattice, inspired by the reference. */
+.site .content-zone>.ambient-background .aurora-mesh{
+ position:absolute;inset:0;z-index:2;pointer-events:none;
+ background-image:linear-gradient(90deg,var(--mesh-line) 1px,transparent 1px),linear-gradient(0deg,var(--mesh-line) 1px,transparent 1px);
+ background-size:42px 42px;
+ background-position:center top;
+ -webkit-mask-image:linear-gradient(to bottom,transparent 0%,#000 8%,#000 88%,transparent 100%);
+ mask-image:linear-gradient(to bottom,transparent 0%,#000 8%,#000 88%,transparent 100%);
+ opacity:0;
+ animation:cm-mesh-breathe 16s ease-in-out infinite;
+}
+.site.dark{--mesh-line:rgba(166,209,241,.28)}
+.site.light{--mesh-line:rgba(76,122,155,.24)}
+@keyframes cm-mesh-breathe{
+ 0%,13%,78%,100%{opacity:0;transform:translate3d(0,0,0)}
+ 24%,39%{opacity:.36;transform:translate3d(0,6px,0)}
+ 54%,65%{opacity:.13;transform:translate3d(0,12px,0)}
+}
+@media(max-width:680px){.site .content-zone>.ambient-background .aurora-mesh{background-size:34px 34px}}
+@media(prefers-reduced-motion:reduce){.site .content-zone>.ambient-background .aurora-mesh{animation:none!important;opacity:.12}}
