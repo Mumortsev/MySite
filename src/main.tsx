@@ -1,6 +1,5 @@
 import React,{useEffect,useMemo,useRef,useState} from 'react';
 import {createRoot} from 'react-dom/client';
-import {createPortal} from 'react-dom';
 import './style.css';
 
 type Theme='dark'|'light';
@@ -27,30 +26,35 @@ const stages=[['01','Знакомство','Разбираемся в задач
 function App(){
  const heroFrame=useRef<HTMLIFrameElement>(null);
  const zoneRef=useRef<HTMLDivElement>(null);
- const membraneRef=useRef<HTMLDivElement>(null);
+ const gridRef=useRef<HTMLDivElement>(null);
 
  useEffect(()=>{
-   const zone=zoneRef.current,layer=membraneRef.current;
-   if(!zone||!layer)return;
+   const grid=gridRef.current,zone=zoneRef.current;
+   if(!grid||!zone)return;
    const pulse=()=>{
      if(document.hidden)return;
      const rect=zone.getBoundingClientRect();
-     const top=Math.max(0,rect.top),bottom=Math.min(innerHeight,rect.bottom);
-     if(bottom-top<100)return;
-     const x=innerWidth*(.2+Math.random()*.6);
-     const y=top+(bottom-top)*(.2+Math.random()*.6);
-     const points=Array.from({length:24},(_,i)=>{
-       const angle=i/24*Math.PI*2;
-       const radius=37+Math.random()*17;
-       return (50+Math.cos(angle)*radius).toFixed(1)+'% '+(50+Math.sin(angle)*radius).toFixed(1)+'%';
-     }).join(',');
-     layer.style.left=x+'px';layer.style.top=y+'px';
-     layer.style.clipPath='polygon('+points+')';
-     layer.classList.remove('grid-reveal-active');
-     void layer.offsetWidth;
-     layer.classList.add('grid-reveal-active');
+     const visibleTop=Math.max(0,rect.top),visibleBottom=Math.min(innerHeight,rect.bottom);
+     if(visibleBottom-visibleTop<100)return;
+     const x=Math.round(rect.width*(.18+Math.random()*.64));
+     const y=Math.round(visibleTop+(visibleBottom-visibleTop)*(.2+Math.random()*.6)-rect.top);
+     const angles=24;
+     const radius=90+Math.random()*45;
+     const points=Array.from({length:angles},(_,i)=>{
+       const angle=i/angles*Math.PI*2;
+       const r=radius*(.74+Math.random()*.52);
+       return (x+Math.cos(angle)*r).toFixed(1)+','+(y+Math.sin(angle)*r).toFixed(1);
+     }).join(' ');
+     const w=Math.max(1,Math.ceil(rect.width)),h=Math.max(1,Math.ceil(rect.height));
+     const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'"><polygon points="'+points+'" fill="white"/></svg>';
+     const mask='url("data:image/svg+xml,'+encodeURIComponent(svg)+'")';
+     grid.style.webkitMaskImage=mask;
+     grid.style.maskImage=mask;
+     grid.classList.remove('square-grid-pulse');
+     void grid.offsetWidth;
+     grid.classList.add('square-grid-pulse');
    };
-   const first=window.setTimeout(pulse,1000);
+   const first=window.setTimeout(pulse,900);
    const timer=window.setInterval(pulse,5000);
    return()=>{clearTimeout(first);clearInterval(timer)};
  },[]);
@@ -89,9 +93,8 @@ function App(){
  <div className="hero-copy"><div className="eyebrow"><span className="live-dot"/> ЦИФРОВАЯ СТУДИЯ / CODE_M</div><h1>ЗА ГРАНЬЮ<br/><em>КОДА.</em></h1><p>Создаём сайты, приложения и цифровые продукты, в которых технологии встречаются с дизайном.</p><a className="primary-cta" href="#services">Исследовать возможности <span>↗</span></a></div>
  <div className="hero-foot"><span>ТЕХНОЛОГИИ · ДИЗАЙН · ДВИЖЕНИЕ</span><a href="#services">ЛИСТАЙТЕ ВНИЗ ↓</a></div>
  </section>
- {createPortal(<div className={'grid-reveal-overlay '+theme} ref={membraneRef} aria-hidden="true"/>,document.body)}
  <div className="content-zone" ref={zoneRef}>
- <div className="ambient-background" aria-hidden="true"><div className="aurora-field"/><div className="aurora-veil"/></div>
+ <div className="ambient-background" aria-hidden="true"><div className="aurora-field"/><div className="aurora-mesh" ref={gridRef}/><div className="aurora-veil"/></div>
  <section id="services" className="content-section services"><div className="section-top"><span className="eyebrow">01 / ЭКСПЕРТИЗА</span><h2>Делаем сложное<br/><em>простым.</em></h2><p>Выберите направление — карточка раскроется и покажет, что входит в работу.</p></div>
  <div className="service-stack">{services.map(x=><article key={x.id} className={'service-expand '+(expanded===x.id?'is-open':'')}><button className="service-head" aria-expanded={expanded===x.id} onClick={()=>setExpanded(v=>v===x.id?null:x.id)}><span className="service-index">{x.number} /</span><span className="service-title"><strong>{x.title}</strong><small>{x.desc}</small></span><span className="round-control">{expanded===x.id?'−':'+'}</span></button><div className="service-reveal"><div className="service-inner"><p>{x.details}</p><div className="service-tags">{x.tags.map(t=><span key={t}>{t}</span>)}</div><a href="#calculator" onClick={()=>{setChosen(v=>v.includes(x.id)?v:[...v,x.id]);setStep(2)}}>Рассчитать проект <span>↗</span></a></div></div></article>)}</div></section>
  <section id="projects" className="content-section projects"><div className="section-top"><span className="eyebrow">02 / ИЗБРАННЫЕ ПРОЕКТЫ</span><h2>Идеи в<br/><em>действии.</em></h2><p>Открывайте кейсы прямо здесь: внутри — живые сайты, а не просто изображения.</p></div>
